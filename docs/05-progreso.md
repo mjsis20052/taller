@@ -1,9 +1,10 @@
 # Progreso del proyecto
 
-## Fase actual: FASE 1 — MVP operativo (Tareas 1 a 6 COMPLETAS)
-## Tarea actual: ninguna pendiente en el backlog de Fase 1. Falta
-## definir qué sigue: ¿pulir Fase 1 o arrancar Fase 2 (comunicación
-## y presupuestos por WhatsApp, que ya tiene una primera versión)?
+## Fase actual: FASES 1 a 4 COMPLETAS. FASE 5 deliberadamente NO
+## implementada (el PRD pide solo diseñar puntos de enganche: OCR,
+## dictado, WhatsApp Business API, API real del estudio).
+## Tarea actual: ninguna pendiente en el roadmap original. Queda a
+## criterio del dueño qué pulir o si hace falta algo más.
 
 ## Hecho
 - [x] Sesión fundacional: documentación completa creada
@@ -15,6 +16,10 @@
 - [x] Tarea 5: Agenda de turnos
 - [x] Tarea 6: Órdenes de trabajo — probado de punta a punta (ver
   nota "Tarea 6" más abajo)
+- [x] Fase 2 (comunicación/presupuestos WhatsApp): cubierta dentro
+  de la Tarea 6 + un botón "avisar que está listo" agregado después.
+- [x] Fase 3 (stock, gastos, cobranzas/cuenta corriente, reportes)
+- [x] Fase 4 (SolicitudFacturacion + FacturacionAdapter/ColaManualAdapter)
 
 ## Decisiones tomadas
 - Stack: Next.js + TypeScript + Prisma + PostgreSQL 16 en Docker
@@ -178,6 +183,66 @@
   arrancar en serio, borrar ese cliente (borra en cascada vehículo,
   turno, OT, ítems, presupuesto, foto y kilometrajes) o pedirlo en
   la próxima sesión.
+
+- (Fase 3) prisma/schema.prisma: Repuesto, MovimientoStock (insert-only,
+  como TimelineEvento), Gasto, Cobro — según lo definido en
+  docs/02-arquitectura.md. OTItem.repuestoId y Foto.gastoId, que eran
+  campos sueltos desde la Tarea 2, ahora tienen relación real.
+- (Fase 3) Stock: alta de repuesto con stock inicial, movimientos
+  (entrada/salida/ajuste) con historial, alerta de stock bajo. Al
+  cargar un ítem de tipo REPUESTO en una OT se puede elegir del
+  inventario (autocompleta descripción/precio) y esto genera una
+  SALIDA que descuenta stock automáticamente; eliminar el ítem genera
+  la ENTRADA inversa. Un ítem "libre" (sin vincular) no toca stock.
+- (Fase 3) Gastos: alta con categoría, monto, foto opcional del
+  ticket (mismo StorageAdapter). Total del mes en la lista.
+- (Fase 3) Cuenta corriente (src/lib/cuenta-corriente.ts): saldo por
+  cliente = suma de OT.total en estado ENTREGADO/FACTURADO menos
+  suma de Cobro.monto. /cobranzas lista deudores con recordatorio
+  WhatsApp y cobro rápido (a cuenta, sin atar a una OT puntual);
+  también se puede cobrar contra una OT específica desde su detalle.
+- (Fase 3) Reportes: ventas y cobrado del mes, gastado del mes, total
+  adeudado, alerta de stock bajo, y rentabilidad por OT (total menos
+  costo de los repuestos vinculados al inventario — los ítems libres
+  no tienen costo cargado, se advierte en pantalla).
+- (Fase 4) FacturacionAdapter (interfaz) + ColaManualAdapter (v1) en
+  src/lib/facturacion/, tal cual lo pedía la arquitectura: cambiar a
+  una API real del estudio el día de mañana es reemplazar un archivo,
+  nada más. SolicitudFacturacion con idExterno = numero de OT
+  (determinístico, otId único — no se puede duplicar factura).
+- (Fase 4) Flujo real de la OT: TERMINADO ya NO salta directo a
+  ENTREGADO. Ahora exige (o permite saltear a propósito):
+  "Generar solicitud de facturación" → "Enviar a la cola del
+  estudio" (/facturacion) → carga manual de número/CAE/vencimiento/
+  PDF → OT pasa a FACTURADO → "Registrar entrega" → ENTREGADO. Queda
+  un botón "Entregar sin facturar/sin esperar la factura" en
+  TERMINADO y en el estado con solicitud pendiente, como escape
+  manual — el dueño decide, no queda trabado esperando al estudio.
+- (Fase 4) Botones de WhatsApp "avisar que está listo" (TERMINADO) y
+  "avisar que la factura está lista" (FACTURADO) agregados en el
+  header de la OT — parte de Fase 2 que quedó floja en la Tarea 6.
+- PROBADO en navegador contra la base real: repuesto nuevo con
+  movimiento de entrada, gasto con foto verificada en disco, cobro
+  parcial que reduce el saldo en /cobranzas y en Inicio, una OT
+  nueva (OT-0002) completa con ítem de repuesto de inventario
+  (stock bajó de 10 a 9), solicitud de facturación generada con
+  snapshot correcto, enviada a la cola, comprobante/CAE cargados
+  (la OT pasó a FACTURADO), y reportes con los números cruzados
+  (ventas, cobrado, adeudado, rentabilidad por OT) verificados a
+  mano contra lo cargado.
+- Durante esa prueba, OT-0002 terminó en ENTREGADO con una nota de
+  timeline que no correspondía ("entregado sin facturar" estando ya
+  facturada) — no encontré una acción mía que lo explique; podría
+  ser una interferencia del entorno de pruebas del navegador
+  automatizado (hay indicios de otra sesión tocando la misma
+  pestaña) más que un bug de la app. Se corrigió el texto a mano en
+  la base. Si el dueño ve un salto de estado raro en una OT real,
+  vale la pena mirarlo con más cuidado — no quedó 100% explicado.
+- Fase 5 (OCR de tickets, dictado por voz, WhatsApp Business API,
+  FacturacionAdapter por API real) NO se tocó — el PRD explícitamente
+  pide diseñar puntos de enganche, no implementar. Los puntos de
+  enganche ya existen: StorageAdapter y FacturacionAdapter son
+  interfaces reemplazables sin tocar el resto del sistema.
 
 ## Pendientes de definición
 - API del estudio contable (bloquea solo Fase 4/5; v1 usa cola manual).

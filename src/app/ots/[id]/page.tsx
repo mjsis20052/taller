@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { saldoCliente } from "@/lib/cuenta-corriente";
+import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { PanelAccionesOT } from "@/components/panel-acciones-ot";
 import { GaleriaFotosOT } from "@/components/galeria-fotos-ot";
 import { FormularioItemOT } from "@/components/formulario-item-ot";
@@ -55,6 +57,7 @@ export default async function PaginaDetalleOT({
       fotos: { orderBy: { fechaTomada: "desc" } },
       timeline: { orderBy: { fecha: "asc" } },
       presupuestos: { orderBy: { createdAt: "desc" }, take: 1 },
+      solicitudFacturacion: true,
     },
   });
 
@@ -67,6 +70,8 @@ export default async function PaginaDetalleOT({
       : null;
 
   const puedeEditarItems = EDITABLE.has(ot.estado);
+  const saldo = await saldoCliente(ot.cliente.id);
+  const mensajeWhatsapp = mensajeSegunEstado(ot.estado, ot.numero, ot.cliente.nombre);
 
   return (
     <section>
@@ -96,13 +101,27 @@ export default async function PaginaDetalleOT({
         )}
       </div>
 
+      {mensajeWhatsapp && (
+        <a
+          href={enlaceWhatsApp(ot.cliente.telefono, mensajeWhatsapp)}
+          target="_blank"
+          rel="noreferrer"
+          className="mb-5 flex items-center justify-center gap-2 rounded-xl bg-exito-suave py-3 text-[14px] font-semibold text-exito"
+        >
+          {ot.estado === "FACTURADO" ? "Avisar: factura lista" : "Avisar: listo para retirar"}
+        </a>
+      )}
+
       <section className="mb-8">
         <h2 className="mb-3 text-[17px] font-semibold text-foreground">Acciones</h2>
         <PanelAccionesOT
           otId={ot.id}
+          clienteId={ot.cliente.id}
           estado={ot.estado}
           cantidadItems={ot.items.length}
           presupuestoPendiente={presupuestoPendiente}
+          solicitudFacturacion={ot.solicitudFacturacion}
+          saldoCliente={saldo}
         />
       </section>
 
@@ -193,4 +212,15 @@ function FilaDato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
       <span className="text-right font-medium text-foreground">{valor}</span>
     </div>
   );
+}
+
+function mensajeSegunEstado(estado: string, numero: string, nombreCliente: string): string | null {
+  const nombre = nombreCliente.split(" ")[0];
+  if (estado === "TERMINADO") {
+    return `Hola ${nombre}! Te escribimos del taller: tu ${numero} está lista, podés pasar a retirarla cuando quieras.`;
+  }
+  if (estado === "FACTURADO") {
+    return `Hola ${nombre}! Tu factura de la ${numero} ya está lista. Te esperamos para la entrega.`;
+  }
+  return null;
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { TarjetaTurno } from "@/components/tarjeta-turno";
+import { listarDeudores } from "@/lib/cuenta-corriente";
 import { EstadoOT, EstadoTurno } from "@/generated/prisma/enums";
 
 const ZONA = "America/Argentina/Buenos_Aires";
@@ -16,26 +17,67 @@ export default async function Inicio() {
   const inicio = new Date(`${hoy}T00:00:00`);
   const fin = new Date(`${hoy}T23:59:59.999`);
 
-  const [turnosHoy, otsActivas] = await Promise.all([
-    prisma.turno.findMany({
-      where: { fechaHora: { gte: inicio, lte: fin }, estado: EstadoTurno.AGENDADO },
-      include: {
-        cliente: { select: { nombre: true, telefono: true } },
-        vehiculo: { select: { patente: true, marca: true, modelo: true } },
-      },
-      orderBy: { fechaHora: "asc" },
-    }),
-    prisma.ordenTrabajo.findMany({
-      where: { estado: { notIn: [EstadoOT.ENTREGADO, EstadoOT.CANCELADA] } },
-      include: { cliente: { select: { nombre: true } }, vehiculo: { select: { patente: true } } },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-    }),
-  ]);
+  const [turnosHoy, otsActivas, repuestosActivos, deudores, presupuestosSinRespuesta, facturacionPendiente] =
+    await Promise.all([
+      prisma.turno.findMany({
+        where: { fechaHora: { gte: inicio, lte: fin }, estado: EstadoTurno.AGENDADO },
+        include: {
+          cliente: { select: { nombre: true, telefono: true } },
+          vehiculo: { select: { patente: true, marca: true, modelo: true } },
+        },
+        orderBy: { fechaHora: "asc" },
+      }),
+      prisma.ordenTrabajo.findMany({
+        where: { estado: { notIn: [EstadoOT.ENTREGADO, EstadoOT.CANCELADA] } },
+        include: { cliente: { select: { nombre: true } }, vehiculo: { select: { patente: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      }),
+      prisma.repuesto.findMany({ where: { activo: true }, select: { stock: true, stockMinimo: true } }),
+      listarDeudores(),
+      prisma.ordenTrabajo.count({ where: { estado: EstadoOT.PRESUPUESTADO } }),
+      prisma.solicitudFacturacion.count({ where: { estado: { in: ["PENDIENTE", "ENVIADA"] } } }),
+    ]);
+
+  const repuestosBajos = repuestosActivos.filter((r) => r.stock <= r.stockMinimo).length;
+
+  const alertas = [
+    repuestosBajos > 0 && {
+      texto: `${repuestosBajos} repuesto${repuestosBajos === 1 ? "" : "s"} con stock bajo`,
+      href: "/stock",
+    },
+    presupuestosSinRespuesta > 0 && {
+      texto: `${presupuestosSinRespuesta} presupuesto${presupuestosSinRespuesta === 1 ? "" : "s"} esperando respuesta`,
+      href: "/ots?estado=PRESUPUESTADO",
+    },
+    deudores.length > 0 && {
+      texto: `${deudores.length} cliente${deudores.length === 1 ? "" : "s"} con saldo pendiente`,
+      href: "/cobranzas",
+    },
+    facturacionPendiente > 0 && {
+      texto: `${facturacionPendiente} solicitud${facturacionPendiente === 1 ? "" : "es"} de facturación pendiente${facturacionPendiente === 1 ? "" : "s"}`,
+      href: "/facturacion",
+    },
+  ].filter(Boolean) as { texto: string; href: string }[];
 
   return (
     <section>
       <EncabezadoPagina titulo="Inicio" descripcion="Turnos de hoy y OTs activas." />
+
+      {alertas.length > 0 && (
+        <section className="mb-8 space-y-2">
+          {alertas.map((a) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              className="flex items-center justify-between rounded-xl bg-alerta-suave px-4 py-3 text-[13.5px] font-medium text-alerta"
+            >
+              {a.texto}
+              <span>›</span>
+            </Link>
+          ))}
+        </section>
+      )}
 
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   avanzarEstadoOT,
@@ -8,30 +9,52 @@ import {
   responderPresupuesto,
   saltarAEjecucion,
 } from "@/app/ots/actions";
+import { entregarSinFacturar, generarSolicitudFacturacion } from "@/app/facturacion/actions";
+import { registrarCobro } from "@/app/cobranzas/actions";
+
+const ETIQUETAS_ESTADO_SOLICITUD: Record<string, string> = {
+  PENDIENTE: "Sin enviar todavía",
+  ENVIADA: "En cola del estudio",
+  FACTURADA: "Facturada",
+  ERROR: "Con error",
+};
 
 export function PanelAccionesOT({
   otId,
+  clienteId,
   estado,
   cantidadItems,
   presupuestoPendiente,
+  solicitudFacturacion,
+  saldoCliente,
 }: {
   otId: string;
+  clienteId: string;
   estado: string;
   cantidadItems: number;
   presupuestoPendiente: { id: string; total: number } | null;
+  solicitudFacturacion: { id: string; estado: string } | null;
+  saldoCliente: number;
 }) {
   const [mostrarCancelar, setMostrarCancelar] = useState(false);
   const [validezDias, setValidezDias] = useState(7);
   const [metodoRespuesta, setMetodoRespuesta] = useState("WhatsApp");
 
-  const esTerminal = estado === "ENTREGADO" || estado === "CANCELADA";
-
-  if (esTerminal) {
+  if (estado === "CANCELADA") {
     return (
       <div className="rounded-2xl border border-borde bg-superficie p-4 text-center text-[13.5px] text-mutado">
-        {estado === "ENTREGADO"
-          ? "OT entregada. La facturación real llega con la Fase 4 (integración con el estudio)."
-          : "OT cancelada."}
+        OT cancelada.
+      </div>
+    );
+  }
+
+  if (estado === "ENTREGADO") {
+    return (
+      <div className="space-y-2.5">
+        <div className="rounded-2xl border border-borde bg-superficie p-4 text-center text-[13.5px] text-mutado">
+          OT entregada.
+        </div>
+        {saldoCliente > 0 && <FormularioCobro otId={otId} clienteId={clienteId} saldoCliente={saldoCliente} />}
       </div>
     );
   }
@@ -153,12 +176,55 @@ export function PanelAccionesOT({
         </form>
       )}
 
-      {estado === "TERMINADO" && (
-        <form action={avanzarEstadoOT.bind(null, otId, undefined)}>
-          <button type="submit" className="w-full rounded-xl bg-primario py-3.5 text-[15px] font-semibold text-white">
-            Registrar entrega
-          </button>
-        </form>
+      {estado === "TERMINADO" && !solicitudFacturacion && (
+        <div className="space-y-2">
+          <form action={generarSolicitudFacturacion.bind(null, otId)}>
+            <button type="submit" className="w-full rounded-xl bg-primario py-3.5 text-[15px] font-semibold text-white">
+              Generar solicitud de facturación
+            </button>
+          </form>
+          <form action={entregarSinFacturar.bind(null, otId)}>
+            <button
+              type="submit"
+              className="w-full rounded-xl border border-borde bg-superficie py-3 text-[13.5px] font-semibold text-foreground"
+            >
+              Entregar sin facturar
+            </button>
+          </form>
+        </div>
+      )}
+
+      {estado === "TERMINADO" && solicitudFacturacion && (
+        <div className="space-y-2">
+          <Link
+            href={`/facturacion/${solicitudFacturacion.id}`}
+            className="flex items-center justify-between rounded-2xl border border-borde bg-superficie px-4 py-3.5"
+          >
+            <span className="text-[14px] font-semibold text-foreground">Solicitud de facturación</span>
+            <span className="rounded-full bg-alerta-suave px-2.5 py-1 text-[11px] font-semibold text-alerta">
+              {ETIQUETAS_ESTADO_SOLICITUD[solicitudFacturacion.estado]}
+            </span>
+          </Link>
+          <form action={entregarSinFacturar.bind(null, otId)}>
+            <button
+              type="submit"
+              className="w-full rounded-xl border border-borde bg-superficie py-3 text-[13.5px] font-semibold text-foreground"
+            >
+              Entregar sin esperar la factura
+            </button>
+          </form>
+        </div>
+      )}
+
+      {estado === "FACTURADO" && (
+        <div className="space-y-2.5">
+          <form action={avanzarEstadoOT.bind(null, otId, undefined)}>
+            <button type="submit" className="w-full rounded-xl bg-primario py-3.5 text-[15px] font-semibold text-white">
+              Registrar entrega
+            </button>
+          </form>
+          {saldoCliente > 0 && <FormularioCobro otId={otId} clienteId={clienteId} saldoCliente={saldoCliente} />}
+        </div>
       )}
 
       {!mostrarCancelar ? (
@@ -195,5 +261,37 @@ export function PanelAccionesOT({
         </form>
       )}
     </div>
+  );
+}
+
+function FormularioCobro({
+  otId,
+  clienteId,
+  saldoCliente,
+}: {
+  otId: string;
+  clienteId: string;
+  saldoCliente: number;
+}) {
+  return (
+    <form action={registrarCobro.bind(null, clienteId, otId)} className="rounded-2xl border border-borde bg-superficie p-4">
+      <p className="mb-2 text-[13.5px] font-semibold text-foreground">
+        Saldo pendiente del cliente: ${saldoCliente.toLocaleString("es-AR")}
+      </p>
+      <div className="flex gap-2">
+        <input
+          name="monto"
+          type="number"
+          min={0}
+          step="0.01"
+          required
+          placeholder="Monto cobrado"
+          className="w-full rounded-lg border border-borde bg-superficie px-3 py-2.5 text-[13.5px]"
+        />
+        <button type="submit" className="shrink-0 rounded-xl bg-primario px-4 text-[13px] font-semibold text-white">
+          Cobrar
+        </button>
+      </div>
+    </form>
   );
 }

@@ -84,7 +84,9 @@ const SIGUIENTE_ESTADO: Partial<Record<EstadoOT, EstadoOT>> = {
   EN_DIAGNOSTICO: EstadoOT.PRESUPUESTADO,
   APROBADO: EstadoOT.EN_EJECUCION,
   EN_EJECUCION: EstadoOT.TERMINADO,
-  TERMINADO: EstadoOT.ENTREGADO,
+  // TERMINADO no salta directo: pasa por Facturación (Fase 4), ver
+  // src/app/facturacion/actions.ts. FACTURADO sí avanza directo.
+  FACTURADO: EstadoOT.ENTREGADO,
 };
 
 export async function avanzarEstadoOT(otId: string, notaOpcional?: string) {
@@ -149,26 +151,54 @@ export async function agregarItemOT(otId: string, formData: FormData) {
   const descripcion = String(formData.get("descripcion") ?? "").trim();
   const cantidad = Number(formData.get("cantidad") ?? 0);
   const precioUnitario = Number(formData.get("precioUnitario") ?? 0);
+  const repuestoId = String(formData.get("repuestoId") ?? "").trim() || null;
 
   if (!descripcion || !cantidad || cantidad <= 0 || precioUnitario < 0) return;
 
   await prisma.$transaction(async (tx) => {
     await tx.oTItem.create({
-      data: { otId, tipo, descripcion, cantidad, precioUnitario },
+      data: { otId, tipo, descripcion, cantidad, precioUnitario, repuestoId },
     });
     await recalcularTotalesOT(otId, tx);
+
+    if (repuestoId) {
+      await tx.movimientoStock.create({
+        data: { repuestoId, tipo: "SALIDA", cantidad: Math.round(cantidad), otId },
+      });
+      await tx.repuesto.update({
+        where: { id: repuestoId },
+        data: { stock: { decrement: Math.round(cantidad) } },
+      });
+    }
   });
 
   revalidatePath(`/ots/${otId}`);
+  revalidatePath("/stock");
 }
 
 export async function eliminarItemOT(itemId: string, otId: string) {
   await prisma.$transaction(async (tx) => {
-    await tx.oTItem.delete({ where: { id: itemId } });
+    const item = await tx.oTItem.delete({ where: { id: itemId } });
     await recalcularTotalesOT(otId, tx);
+
+    if (item.repuestoId) {
+      await tx.movimientoStock.create({
+        data: {
+          repuestoId: item.repuestoId,
+          tipo: "ENTRADA",
+          cantidad: Math.round(Number(item.cantidad)),
+          otId,
+        },
+      });
+      await tx.repuesto.update({
+        where: { id: item.repuestoId },
+        data: { stock: { increment: Math.round(Number(item.cantidad)) } },
+      });
+    }
   });
 
   revalidatePath(`/ots/${otId}`);
+  revalidatePath("/stock");
 }
 
 export async function cargarPresupuesto(otId: string, formData: FormData) {
