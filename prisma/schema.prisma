@@ -66,6 +66,7 @@ enum TipoOTItem {
 enum EntidadFoto {
   OT
   GASTO
+  VEHICULO
 }
 
 enum EstadoPresupuesto {
@@ -115,6 +116,7 @@ model Vehiculo {
   kilometrajes   KilometrajeRegistro[]
   turnos         Turno[]
   ordenesTrabajo OrdenTrabajo[]
+  fotos          Foto[]
 
   @@index([clienteId])
 }
@@ -228,15 +230,18 @@ model Foto {
   id          String      @id @default(cuid())
   entidad     EntidadFoto
   otId        String?
+  vehiculoId  String?
   // Se vincula a Gasto recién en Fase 3.
   gastoId     String?
   path        String
   fechaTomada DateTime    @default(now())
   tipo        String?
 
-  ot OrdenTrabajo? @relation(fields: [otId], references: [id])
+  ot       OrdenTrabajo? @relation(fields: [otId], references: [id])
+  vehiculo Vehiculo?     @relation(fields: [vehiculoId], references: [id])
 
   @@index([otId])
+  @@index([vehiculoId])
 }
 
 model Presupuesto {

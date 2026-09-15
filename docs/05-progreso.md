@@ -1,7 +1,7 @@
 # Progreso del proyecto
 
 ## Fase actual: FASE 1 — MVP operativo
-## Tarea actual: Tarea 4 — Módulo Vehículos (NO INICIADA)
+## Tarea actual: Tarea 6 — Órdenes de trabajo (EN CURSO — ver nota abajo)
 
 ## Hecho
 - [x] Sesión fundacional: documentación completa creada
@@ -9,9 +9,10 @@
 - [x] Tarea 1: Infraestructura base (Docker + Next + Prisma + PWA)
 - [x] Tarea 2: Modelo de datos inicial
 - [x] Tarea 3: Módulo Clientes
-- [ ] Tarea 4: Módulo Vehículos
-- [ ] Tarea 5: Agenda de turnos
-- [ ] Tarea 6: Órdenes de trabajo
+- [x] Tarea 4: Módulo Vehículos
+- [x] Tarea 5: Agenda de turnos
+- [~] Tarea 6: Órdenes de trabajo — código completo, falta terminar
+  de probar en navegador (ver nota "Tarea 6" más abajo)
 
 ## Decisiones tomadas
 - Stack: Next.js + TypeScript + Prisma + PostgreSQL 16 en Docker
@@ -95,6 +96,77 @@
   sesión (se había cerrado); se volvió a levantar a mano. Si el
   dueño ve que `docker ps` no encuentra nada, es por esto — no
   arranca solo con Windows en esta máquina.
+
+- (Tarea 4) src/lib/validaciones/patente.ts: formato viejo (AAA123)
+  y Mercosur (AA123BB), normalizando mayúsculas y sin espacios/guiones.
+- (Tarea 4) Ampliación de alcance pedida por el dueño, más allá del
+  roadmap original: además de cargar un vehículo nuevo, se puede
+  "asignar" uno ya existente en el sistema a otro cliente (busca por
+  patente y reasigna clienteId) — cubre el caso de un auto que
+  cambia de dueño. Y fotos de vehículo: se agregó VEHICULO a
+  EntidadFoto y Foto.vehiculoId (antes solo OT/GASTO), con
+  StorageAdapter genérico (src/lib/storage/) + LocalAdapter
+  (carpeta uploads/, fuera del repo) + route handler en
+  src/app/uploads/[...path] que sirve los archivos.
+- (Tarea 4) Detalle de vehículo con historial de km (alta rápida) y
+  galería de fotos (sacar con cámara o subir, ampliar, eliminar).
+  Página /vehiculos con búsqueda por patente/marca/modelo.
+- (Tarea 5) Turno: CRUD completo. Vista día (con selector de semana
+  tipo tira de 7 días) y vista lista de próximos turnos, por
+  ?vista=lista. Alta con búsqueda de cliente existente (autocomplete
+  con debounce) o link a alta rápida si no aparece, vehículo
+  filtrado por ese cliente, y servicios frecuentes que precargan
+  motivo + duración. Botón de recordatorio por WhatsApp (wa.me) con
+  texto pre-armado. Cancelación de turno (soft, cambia estado).
+  Simplificación: la conversión de horario usa el reloj del proceso
+  Node sin librería de zonas horarias — server corriendo con la hora
+  de Argentina, no se validó con otro huso horario.
+- (Tarea 6) Simplificación deliberada del flujo: la creación de la
+  OT (directa o desde un turno via "Recepcionar vehículo") ya
+  incluye los datos de recepción (km, combustible) y la deja
+  directo en estado INGRESADO — el estado TURNO_AGENDADO del enum
+  nunca se usa en la práctica del MVP. Se documenta acá porque es
+  una desviación consciente del PRD para no duplicar pasos.
+  FACTURADO tampoco se usa todavía: TERMINADO pasa directo a
+  ENTREGADO porque el módulo de facturación real es Fase 4 y no
+  existe SolicitudFacturacion — lo dice el botón en pantalla.
+- (Tarea 6) Numeración secuencial OT-0001 en src/lib/ordenes-trabajo.ts,
+  dentro de una transacción Prisma. Timeline (insert-only) en cada
+  cambio de estado. Ítems de repuestos/mano de obra con recálculo de
+  totales en cada alta/baja (también en transacción). Presupuesto:
+  snapshot de ítems + total al momento de enviar, con respuesta
+  (aprobado vía WhatsApp/llamada/presencial, o rechazado). Atajo
+  "trabajo chico" salta el presupuesto e ingresa directo a ejecución.
+  Cancelación con motivo obligatorio, disponible en cualquier estado
+  no terminal. Fotos de OT con el mismo StorageAdapter que vehículos.
+- (Tarea 6) BUG REAL encontrado y corregido durante las pruebas: el
+  selector de vehículo en el alta de OT quedaba `disabled` cuando
+  venía precargado desde un turno (para bloquear el cambio de
+  cliente/vehículo), y un `<select disabled>` no se envía en el
+  FormData — la OT nunca recibía vehiculoId. Se sacó el `disabled`
+  del select (src/components/selector-cliente-vehiculo.tsx); el
+  cliente sigue bloqueado (no se puede "Cambiar"), el vehículo no.
+- (Tarea 6) Se agregó un botón de "Volver" en el header
+  (src/components/boton-volver.tsx) — no estaba contemplado en el
+  roadmap original, lo pidió el dueño al ver que las pantallas de
+  detalle/alta no tenían forma de volver salvo el botón atrás del
+  celular. Aparece en cualquier ruta que no sea una de las 4
+  pestañas principales (/, /agenda, /ots, /mas).
+- (Tarea 6) El botón "+" central de la nav, que hasta la Tarea 3
+  quedaba sin función, ahora abre un menú (Nuevo turno / Recepcionar
+  vehículo / Nuevo cliente) — src/components/boton-nuevo.tsx.
+  Búsqueda global agregada en el header (ícono de lupa) → /buscar,
+  busca por patente y por nombre/teléfono de cliente a la vez.
+- (Tarea 6) PROBADO en navegador contra la base real hasta acá:
+  alta de OT desde un turno (incluido el bug de arriba, encontrado
+  probando), numeración OT-0001, avance a "En diagnóstico", carga de
+  dos ítems (mano de obra + repuesto) con recálculo correcto de
+  totales ($15.000 + $8.000 = $23.000). NO SE TERMINÓ DE PROBAR:
+  enviar presupuesto, aprobar/rechazar, pasar a ejecución, terminar
+  y entregar — la sesión se cortó justo ahí. El código de esos pasos
+  existe y pasa tsc/eslint, pero no se vio funcionar en pantalla.
+  Falta también probar la subida de fotos de OT en el navegador
+  (la de vehículo sí se probó, comparten el mismo StorageAdapter).
 
 ## Pendientes de definición
 - API del estudio contable (bloquea solo Fase 4/5; v1 usa cola manual).

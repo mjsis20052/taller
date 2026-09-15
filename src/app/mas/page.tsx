@@ -20,10 +20,14 @@ export default function PaginaMas() {
           <span className="text-[15px] font-semibold text-foreground">Clientes</span>
           <span className="text-mutado">›</span>
         </Link>
+        <Link
+          href="/vehiculos"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3.5 active:bg-black/[0.03]"
+        >
+          <span className="text-[15px] font-semibold text-foreground">Vehículos</span>
+          <span className="text-mutado">›</span>
+        </Link>
 
-        <div className="rounded-2xl border border-dashed border-borde bg-superficie px-4 py-3.5 text-[15px] text-mutado">
-          Vehículos — Tarea 4
-        </div>
         <div className="rounded-2xl border border-dashed border-borde bg-superficie px-4 py-3.5 text-[15px] text-mutado">
           Stock, gastos y cobranzas — Fase 3
         </div>

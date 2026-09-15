@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { SVGProps } from "react";
+import { BotonNuevo } from "@/components/boton-nuevo";
 
 function IconoInicio(props: SVGProps<SVGSVGElement>) {
   return (
@@ -38,15 +39,6 @@ function IconoMas(props: SVGProps<SVGSVGElement>) {
       <circle cx="12" cy="12" r="1" />
       <circle cx="19" cy="12" r="1" />
       <circle cx="5" cy="12" r="1" />
-    </svg>
-  );
-}
-
-function IconoNuevo(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M5 12h14" />
-      <path d="M12 5v14" />
     </svg>
   );
 }
@@ -90,15 +82,7 @@ export function NavegacionInferior() {
           <Pestana key={href} href={href} etiqueta={etiqueta} Icono={Icono} activa={activa(href)} />
         ))}
 
-        {/* Acción central: se conecta a "nuevo turno / nueva OT" en Tareas 5 y 6. */}
-        <button
-          type="button"
-          title="Próximamente: nuevo turno o nueva OT"
-          aria-label="Nuevo turno o nueva OT (próximamente)"
-          className="-mt-8 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primario text-white shadow-[0_8px_20px_-6px_rgba(29,78,216,0.6)] ring-4 ring-superficie transition-transform active:scale-95"
-        >
-          <IconoNuevo className="h-7 w-7" />
-        </button>
+        <BotonNuevo />
 
         {PESTANAS_DERECHA.map(({ href, etiqueta, Icono }) => (
           <Pestana key={href} href={href} etiqueta={etiqueta} Icono={Icono} activa={activa(href)} />
