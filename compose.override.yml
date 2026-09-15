@@ -1,0 +1,9 @@
+# Override solo para ESTA máquina (mecanismo estándar de Docker Compose).
+# El puerto host 5432 está ocupado por otro proyecto (core-db-1),
+# y 5433/5434 por otros. La base de este taller se publica en 5435.
+# El docker-compose.yml original queda intacto. Borrá este archivo
+# si algún día se libera el 5432.
+services:
+  db:
+    ports: !override
+      - "5435:5432"
