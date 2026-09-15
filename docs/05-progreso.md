@@ -1,7 +1,9 @@
 # Progreso del proyecto
 
-## Fase actual: FASE 1 — MVP operativo
-## Tarea actual: Tarea 6 — Órdenes de trabajo (EN CURSO — ver nota abajo)
+## Fase actual: FASE 1 — MVP operativo (Tareas 1 a 6 COMPLETAS)
+## Tarea actual: ninguna pendiente en el backlog de Fase 1. Falta
+## definir qué sigue: ¿pulir Fase 1 o arrancar Fase 2 (comunicación
+## y presupuestos por WhatsApp, que ya tiene una primera versión)?
 
 ## Hecho
 - [x] Sesión fundacional: documentación completa creada
@@ -11,8 +13,8 @@
 - [x] Tarea 3: Módulo Clientes
 - [x] Tarea 4: Módulo Vehículos
 - [x] Tarea 5: Agenda de turnos
-- [~] Tarea 6: Órdenes de trabajo — código completo, falta terminar
-  de probar en navegador (ver nota "Tarea 6" más abajo)
+- [x] Tarea 6: Órdenes de trabajo — probado de punta a punta (ver
+  nota "Tarea 6" más abajo)
 
 ## Decisiones tomadas
 - Stack: Next.js + TypeScript + Prisma + PostgreSQL 16 en Docker
@@ -157,16 +159,25 @@
   vehículo / Nuevo cliente) — src/components/boton-nuevo.tsx.
   Búsqueda global agregada en el header (ícono de lupa) → /buscar,
   busca por patente y por nombre/teléfono de cliente a la vez.
-- (Tarea 6) PROBADO en navegador contra la base real hasta acá:
-  alta de OT desde un turno (incluido el bug de arriba, encontrado
-  probando), numeración OT-0001, avance a "En diagnóstico", carga de
-  dos ítems (mano de obra + repuesto) con recálculo correcto de
-  totales ($15.000 + $8.000 = $23.000). NO SE TERMINÓ DE PROBAR:
-  enviar presupuesto, aprobar/rechazar, pasar a ejecución, terminar
-  y entregar — la sesión se cortó justo ahí. El código de esos pasos
-  existe y pasa tsc/eslint, pero no se vio funcionar en pantalla.
-  Falta también probar la subida de fotos de OT en el navegador
-  (la de vehículo sí se probó, comparten el mismo StorageAdapter).
+- (Tarea 6) PROBADO de punta a punta en navegador contra la base
+  real, con OT-0001: alta desde un turno (con el bug de arriba
+  encontrado y corregido en el camino), numeración secuencial,
+  carga de ítems con recálculo de totales ($15.000 + $8.000 =
+  $23.000), presupuesto enviado y aprobado "vía WhatsApp" (queda en
+  el timeline), ejecución, foto subida y verificada en disco
+  (`uploads/ots/<id>/...`), terminado (ya no se pueden borrar
+  ítems) y entrega final — con el mensaje en pantalla que aclara
+  que la facturación real llega en Fase 4. Se verificó también que
+  la OT entregada deja de aparecer en "OTs activas" de Inicio y en
+  el filtro "Activas" de /ots, y que aparece correctamente en el
+  detalle del cliente y del vehículo.
+- OT-0001 (Roberto Gomez, Ford Fiesta patente AB123CD) se dejó
+  cargada a propósito como dato de ejemplo para que el dueño tenga
+  algo para ver al abrir la app — no es basura de test, se llegó a
+  pedir explícitamente. Si se quiere una base 100% limpia para
+  arrancar en serio, borrar ese cliente (borra en cascada vehículo,
+  turno, OT, ítems, presupuesto, foto y kilometrajes) o pedirlo en
+  la próxima sesión.
 
 ## Pendientes de definición
 - API del estudio contable (bloquea solo Fase 4/5; v1 usa cola manual).
