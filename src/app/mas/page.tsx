@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
-import { EstadoVacio } from "@/components/estado-vacio";
 
 export const metadata: Metadata = { title: "Más" };
 
@@ -11,18 +11,26 @@ export default function PaginaMas() {
         titulo="Más"
         descripcion="Clientes, vehículos, stock, gastos, cobranzas y facturación."
       />
-      <EstadoVacio
-        etiquetaFase="Fases 1, 3 y 4"
-        titulo="Todavía no hay secciones activas"
-        descripcion="Clientes y vehículos llegan en las Tareas 3 y 4. Stock, cobranzas y facturación, en fases siguientes."
-        icono={
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
-            <circle cx="12" cy="12" r="1" />
-            <circle cx="19" cy="12" r="1" />
-            <circle cx="5" cy="12" r="1" />
-          </svg>
-        }
-      />
+
+      <div className="space-y-2.5">
+        <Link
+          href="/clientes"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3.5 active:bg-black/[0.03]"
+        >
+          <span className="text-[15px] font-semibold text-foreground">Clientes</span>
+          <span className="text-mutado">›</span>
+        </Link>
+
+        <div className="rounded-2xl border border-dashed border-borde bg-superficie px-4 py-3.5 text-[15px] text-mutado">
+          Vehículos — Tarea 4
+        </div>
+        <div className="rounded-2xl border border-dashed border-borde bg-superficie px-4 py-3.5 text-[15px] text-mutado">
+          Stock, gastos y cobranzas — Fase 3
+        </div>
+        <div className="rounded-2xl border border-dashed border-borde bg-superficie px-4 py-3.5 text-[15px] text-mutado">
+          Facturación — Fase 4
+        </div>
+      </div>
     </section>
   );
 }

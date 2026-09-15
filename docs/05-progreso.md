@@ -1,14 +1,14 @@
 # Progreso del proyecto
 
 ## Fase actual: FASE 1 — MVP operativo
-## Tarea actual: Tarea 3 — Módulo Clientes (NO INICIADA)
+## Tarea actual: Tarea 4 — Módulo Vehículos (NO INICIADA)
 
 ## Hecho
 - [x] Sesión fundacional: documentación completa creada
   (AGENTS.md, CLAUDE.md, docker-compose.yml, docs 01 a 05)
 - [x] Tarea 1: Infraestructura base (Docker + Next + Prisma + PWA)
 - [x] Tarea 2: Modelo de datos inicial
-- [ ] Tarea 3: Módulo Clientes
+- [x] Tarea 3: Módulo Clientes
 - [ ] Tarea 4: Módulo Vehículos
 - [ ] Tarea 5: Agenda de turnos
 - [ ] Tarea 6: Órdenes de trabajo
@@ -67,6 +67,34 @@
   DoS por stack exhaustion). El fix automático baja Prisma a 6.12.0
   (breaking change, stack técnico no se toca sin consultar) — queda
   pendiente de decisión del usuario, no se tocó.
+
+- (Tarea 3) src/lib/prisma.ts: singleton de PrismaClient (evita
+  abrir conexión nueva en cada hot-reload de dev).
+- (Tarea 3) src/lib/validaciones/dni-cuit.ts y telefono.ts:
+  validaciones compartidas. DNI 6-8 dígitos. CUIT con dígito
+  verificador real (mod 11), no solo longitud. Teléfono formato
+  internacional E.164 (+ código de país), obligatorio.
+- (Tarea 3) Server actions en src/app/clientes/actions.ts
+  (crearCliente, actualizarCliente, cambiarActivoCliente) +
+  FormularioCliente (src/components) compartido entre alta y
+  edición con useActionState. Baja lógica simple (toggle activo),
+  sin bloquear por OTs asociadas — todavía no hay módulo de OTs
+  con el que chocar.
+- (Tarea 3) Páginas: /clientes (lista + búsqueda por nombre o
+  teléfono, ?q=), /clientes/nuevo, /clientes/[id] (detalle con
+  vehículos y OTs, hoy vacíos a la espera de Tareas 4 y 6),
+  /clientes/[id]/editar. Entrada agregada en "Más" (todavía no hay
+  tab propio de Clientes en la nav inferior).
+- (Tarea 3) Probado en navegador contra la base real: alta válida,
+  alta rechazada por CUIT inválido y por teléfono sin formato
+  internacional (no se crea el registro), búsqueda con y sin
+  resultados, baja lógica y reactivación, edición — verificado con
+  consultas SQL directas, no solo por pantalla. Registro de prueba
+  borrado al terminar.
+- (Tarea 3) Docker Desktop no estaba corriendo al arrancar esta
+  sesión (se había cerrado); se volvió a levantar a mano. Si el
+  dueño ve que `docker ps` no encuentra nada, es por esto — no
+  arranca solo con Windows en esta máquina.
 
 ## Pendientes de definición
 - API del estudio contable (bloquea solo Fase 4/5; v1 usa cola manual).
