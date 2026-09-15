@@ -13,3 +13,250 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ---------------------------------------------------------------------------
+// Fase 1 — MVP operativo. Entidades de Fase 3/4 (Repuesto, MovimientoStock,
+// Gasto, Cobro, SolicitudFacturacion) se agregan después, según roadmap.
+// ---------------------------------------------------------------------------
+
+enum TipoPersona {
+  FISICA
+  JURIDICA
+}
+
+enum CondicionFiscal {
+  CONSUMIDOR_FINAL
+  RESPONSABLE_INSCRIPTO
+  MONOTRIBUTISTA
+  EXENTO
+}
+
+enum EstadoTurno {
+  AGENDADO
+  CANCELADO
+  CONVERTIDO_OT
+}
+
+enum EstadoOT {
+  TURNO_AGENDADO
+  INGRESADO
+  EN_DIAGNOSTICO
+  PRESUPUESTADO
+  APROBADO
+  EN_EJECUCION
+  TERMINADO
+  FACTURADO
+  ENTREGADO
+  CANCELADA
+}
+
+enum NivelCombustible {
+  VACIO
+  UN_CUARTO
+  MEDIO
+  TRES_CUARTOS
+  LLENO
+}
+
+enum TipoOTItem {
+  REPUESTO
+  MANO_OBRA
+}
+
+enum EntidadFoto {
+  OT
+  GASTO
+}
+
+enum EstadoPresupuesto {
+  ENVIADO
+  APROBADO
+  RECHAZADO
+  SIN_RESPUESTA
+}
+
+model Cliente {
+  id              String          @id @default(cuid())
+  nombre          String
+  tipoPersona     TipoPersona
+  dni             String?
+  cuit            String?
+  condicionFiscal CondicionFiscal @default(CONSUMIDOR_FINAL)
+  telefono        String
+  email           String?
+  domicilio       String?
+  notas           String?
+  activo          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  vehiculos      Vehiculo[]
+  turnos         Turno[]
+  ordenesTrabajo OrdenTrabajo[]
+
+  @@index([nombre])
+  @@index([telefono])
+}
+
+model Vehiculo {
+  id        String   @id @default(cuid())
+  clienteId String
+  patente   String   @unique
+  marca     String
+  modelo    String
+  anio      Int?
+  color     String?
+  vin       String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cliente        Cliente               @relation(fields: [clienteId], references: [id])
+  kilometrajes   KilometrajeRegistro[]
+  turnos         Turno[]
+  ordenesTrabajo OrdenTrabajo[]
+
+  @@index([clienteId])
+}
+
+model KilometrajeRegistro {
+  id         String   @id @default(cuid())
+  vehiculoId String
+  km         Int
+  fecha      DateTime @default(now())
+  otId       String?
+
+  vehiculo Vehiculo      @relation(fields: [vehiculoId], references: [id])
+  ot       OrdenTrabajo? @relation(fields: [otId], references: [id])
+
+  @@index([vehiculoId])
+  @@index([otId])
+}
+
+model ServicioFrecuente {
+  id             String   @id @default(cuid())
+  nombre         String   @unique
+  duracionMin    Int
+  precioSugerido Decimal? @db.Decimal(12, 2)
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Turno {
+  id          String      @id @default(cuid())
+  clienteId   String
+  vehiculoId  String
+  fechaHora   DateTime
+  duracionMin Int
+  motivo      String
+  estado      EstadoTurno @default(AGENDADO)
+  otId        String?     @unique
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  cliente  Cliente       @relation(fields: [clienteId], references: [id])
+  vehiculo Vehiculo      @relation(fields: [vehiculoId], references: [id])
+  ot       OrdenTrabajo? @relation(fields: [otId], references: [id])
+
+  @@index([clienteId])
+  @@index([vehiculoId])
+  @@index([fechaHora])
+}
+
+model OrdenTrabajo {
+  id                String            @id @default(cuid())
+  numero            String            @unique
+  clienteId         String
+  vehiculoId        String
+  estado            EstadoOT          @default(TURNO_AGENDADO)
+  motivo            String?
+  kmIngreso         Int?
+  nivelCombustible  NivelCombustible?
+  motivoCancelacion String?
+  totalRepuestos    Decimal           @default(0) @db.Decimal(12, 2)
+  totalManoObra     Decimal           @default(0) @db.Decimal(12, 2)
+  total             Decimal           @default(0) @db.Decimal(12, 2)
+  cerradaAt         DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  cliente      Cliente               @relation(fields: [clienteId], references: [id])
+  vehiculo     Vehiculo              @relation(fields: [vehiculoId], references: [id])
+  turno        Turno?
+  kilometrajes KilometrajeRegistro[]
+  timeline     TimelineEvento[]
+  items        OTItem[]
+  fotos        Foto[]
+  presupuestos Presupuesto[]
+
+  @@index([clienteId])
+  @@index([vehiculoId])
+  @@index([estado])
+}
+
+// Inmutable: solo INSERT, nunca UPDATE ni DELETE.
+model TimelineEvento {
+  id     String   @id @default(cuid())
+  otId   String
+  estado EstadoOT
+  nota   String?
+  fecha  DateTime @default(now())
+
+  ot OrdenTrabajo @relation(fields: [otId], references: [id])
+
+  @@index([otId])
+}
+
+model OTItem {
+  id             String     @id @default(cuid())
+  otId           String
+  tipo           TipoOTItem
+  descripcion    String
+  cantidad       Decimal    @db.Decimal(12, 2)
+  precioUnitario Decimal    @db.Decimal(12, 2)
+  // Se vincula al inventario recién en Fase 3 (modelo Repuesto).
+  repuestoId     String?
+  createdAt      DateTime   @default(now())
+
+  ot OrdenTrabajo @relation(fields: [otId], references: [id])
+
+  @@index([otId])
+}
+
+model Foto {
+  id          String      @id @default(cuid())
+  entidad     EntidadFoto
+  otId        String?
+  // Se vincula a Gasto recién en Fase 3.
+  gastoId     String?
+  path        String
+  fechaTomada DateTime    @default(now())
+  tipo        String?
+
+  ot OrdenTrabajo? @relation(fields: [otId], references: [id])
+
+  @@index([otId])
+}
+
+model Presupuesto {
+  id              String            @id @default(cuid())
+  otId            String
+  itemsSnapshot   Json
+  total           Decimal           @db.Decimal(12, 2)
+  validezDias     Int
+  estado          EstadoPresupuesto @default(ENVIADO)
+  enviadoAt       DateTime?
+  respondidoAt    DateTime?
+  metodoRespuesta String?
+  createdAt       DateTime          @default(now())
+
+  ot OrdenTrabajo @relation(fields: [otId], references: [id])
+
+  @@index([otId])
+}
+
+model Config {
+  clave String @id
+  valor String
+}

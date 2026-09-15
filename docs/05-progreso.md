@@ -1,13 +1,13 @@
 # Progreso del proyecto
 
 ## Fase actual: FASE 1 — MVP operativo
-## Tarea actual: Tarea 2 — Modelo de datos inicial (NO INICIADA)
+## Tarea actual: Tarea 3 — Módulo Clientes (NO INICIADA)
 
 ## Hecho
 - [x] Sesión fundacional: documentación completa creada
   (AGENTS.md, CLAUDE.md, docker-compose.yml, docs 01 a 05)
 - [x] Tarea 1: Infraestructura base (Docker + Next + Prisma + PWA)
-- [ ] Tarea 2: Modelo de datos inicial
+- [x] Tarea 2: Modelo de datos inicial
 - [ ] Tarea 3: Módulo Clientes
 - [ ] Tarea 4: Módulo Vehículos
 - [ ] Tarea 5: Agenda de turnos
@@ -45,6 +45,32 @@
   inferior fija Inicio/Agenda/+/OTs/Más. El botón + central queda
   sin función hasta Tareas 5 y 6. Páginas placeholder por sección.
 
+- (Tarea 2) schema.prisma con las 11 entidades de Fase 1 (Cliente,
+  Vehiculo, KilometrajeRegistro, ServicioFrecuente, Turno,
+  OrdenTrabajo, TimelineEvento, OTItem, Foto, Presupuesto, Config)
+  + enums. Repuesto/MovimientoStock/Gasto/Cobro/SolicitudFacturacion
+  quedan para Fase 3/4, como marca el roadmap.
+- (Tarea 2) IDs con cuid(). Montos con Decimal(12,2). Soft-delete
+  (activo) en Cliente y Vehiculo. ServicioFrecuente.nombre único
+  (necesario para el seed idempotente).
+- (Tarea 2) Dos migraciones aplicadas: modelo_inicial y
+  servicio_frecuente_nombre_unico (esta última se generó a mano
+  con `prisma migrate diff` porque `migrate dev` no corre en modo
+  no interactivo; se confirmó antes que la tabla estaba vacía, sin
+  riesgo de pérdida de datos).
+- (Tarea 2) Seed en prisma/seed.ts (5 servicios frecuentes de
+  ejemplo), corrido con tsx. Se agregó tsx como devDependency y
+  `migrations.seed` en prisma.config.ts. Verificado con una
+  consulta SQL directa contra la base — los 5 registros están.
+- (Tarea 2) `npm install` de tsx destapó 3 vulnerabilidades high
+  preexistentes en @prisma/config (deepmerge-ts, GHSA-ggr8-5vv4-36mx,
+  DoS por stack exhaustion). El fix automático baja Prisma a 6.12.0
+  (breaking change, stack técnico no se toca sin consultar) — queda
+  pendiente de decisión del usuario, no se tocó.
+
 ## Pendientes de definición
 - API del estudio contable (bloquea solo Fase 4/5; v1 usa cola manual).
 - Deploy a producción (decisión posterior: VPS, PaaS, etc.).
+- Vulnerabilidad npm en @prisma/config (ver nota de Tarea 2 arriba):
+  ¿actualizar Prisma ahora (breaking) o esperar a que salga un fix
+  sin downgrade?
