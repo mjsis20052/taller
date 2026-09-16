@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { FormularioCliente } from "@/components/formulario-cliente";
+import { SeccionVehiculosCliente } from "@/components/seccion-vehiculos-cliente";
 import { actualizarCliente } from "@/app/clientes/actions";
 
 export const metadata: Metadata = { title: "Editar cliente" };
@@ -13,7 +14,10 @@ export default async function PaginaEditarCliente({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const cliente = await prisma.cliente.findUnique({ where: { id } });
+  const cliente = await prisma.cliente.findUnique({
+    where: { id },
+    include: { vehiculos: { orderBy: { patente: "asc" } } },
+  });
 
   if (!cliente) notFound();
 
@@ -25,6 +29,7 @@ export default async function PaginaEditarCliente({
         cliente={cliente}
         textoBoton="Guardar cambios"
       />
+      <SeccionVehiculosCliente clienteId={cliente.id} vehiculos={cliente.vehiculos} />
     </section>
   );
 }
