@@ -152,45 +152,32 @@ export async function buscarVehiculoPorPatente(
   redirect(`/vehiculos/${vehiculo.id}`);
 }
 
-export type ResultadoBusquedaAsignacion = {
-  error?: string;
-  vehiculo?: {
-    id: string;
-    patente: string;
-    marca: string;
-    modelo: string;
-    clienteActualNombre: string;
-    yaEsDeEsteCliente: boolean;
-  };
-};
+export async function listarVehiculosParaAsignar(clienteId: string, query: string) {
+  const texto = query.trim();
 
-export async function buscarVehiculoParaAsignar(
-  clienteId: string,
-  _estadoPrevio: ResultadoBusquedaAsignacion,
-  formData: FormData,
-): Promise<ResultadoBusquedaAsignacion> {
-  const patente = normalizarPatente(String(formData.get("patente") ?? ""));
-  if (!patente) return { error: "Ingresá una patente." };
-
-  const vehiculo = await prisma.vehiculo.findUnique({
-    where: { patente },
+  const vehiculos = await prisma.vehiculo.findMany({
+    where: texto
+      ? {
+          OR: [
+            { patente: { contains: texto, mode: "insensitive" } },
+            { marca: { contains: texto, mode: "insensitive" } },
+            { modelo: { contains: texto, mode: "insensitive" } },
+          ],
+        }
+      : undefined,
     include: { cliente: { select: { id: true, nombre: true } } },
+    orderBy: { patente: "asc" },
+    take: 20,
   });
 
-  if (!vehiculo) {
-    return { error: `No hay ningún vehículo cargado con la patente ${patente}.` };
-  }
-
-  return {
-    vehiculo: {
-      id: vehiculo.id,
-      patente: vehiculo.patente,
-      marca: vehiculo.marca,
-      modelo: vehiculo.modelo,
-      clienteActualNombre: vehiculo.cliente.nombre,
-      yaEsDeEsteCliente: vehiculo.clienteId === clienteId,
-    },
-  };
+  return vehiculos.map((v) => ({
+    id: v.id,
+    patente: v.patente,
+    marca: v.marca,
+    modelo: v.modelo,
+    clienteActualNombre: v.cliente.nombre,
+    yaEsDeEsteCliente: v.clienteId === clienteId,
+  }));
 }
 
 export async function asignarVehiculoACliente(vehiculoId: string, clienteId: string) {
