@@ -244,6 +244,28 @@
   enganche ya existen: StorageAdapter y FacturacionAdapter son
   interfaces reemplazables sin tocar el resto del sistema.
 
+- (Diseño) Se agregaron `framer-motion` y `vaul` (deps nuevas).
+  Transición de página global (fade + slide sutil) en
+  src/components/transicion-pagina.tsx, envolviendo el `<main>` del
+  layout. Listas animadas (stagger fade-in) en Clientes, Vehículos y
+  OTs vía src/components/lista-animada.tsx. El botón "+" central
+  ahora abre un bottom sheet real (Vaul) en vez de un popover chico.
+  Paleta con sombras sutiles en tarjetas y botones primarios,
+  aplicadas globalmente por combinación de clases en globals.css
+  (sin tocar cada componente uno por uno).
+- (Diseño) BUG encontrado y corregido probando: los links del nuevo
+  bottom sheet no navegaban. Causa: el onClick hacía
+  `preventDefault()` + `router.push()` manual, lo que se pisaba con
+  el cierre del Drawer. Se sacó el manejo manual y se dejó que
+  `next/link` navegue solo — Vaul se cierra por el cambio de ruta.
+- (Diseño) Todavía NO está desplegado en ningún lado — sigue
+  corriendo solo en esta máquina (`npm run dev` + Postgres en
+  Docker). El dueño lo probó desde su propio navegador en algún
+  momento de esta sesión (apareció un cliente "Mauricio sisti" que
+  no cargué yo), así que el server sí es alcanzable en la red local
+  mientras corre `npm run dev` — pero no hay nada público ni
+  persistente. Definir dónde y cómo desplegar queda pendiente.
+
 ## Pendientes de definición
 - API del estudio contable (bloquea solo Fase 4/5; v1 usa cola manual).
 - Deploy a producción (decisión posterior: VPS, PaaS, etc.).

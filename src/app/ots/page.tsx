@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { ListaAnimada, ItemAnimado } from "@/components/lista-animada";
 import { EstadoOT } from "@/generated/prisma/enums";
 
 export const metadata: Metadata = { title: "Órdenes de trabajo" };
@@ -83,25 +84,26 @@ export default async function PaginaOTs({
           }
         />
       ) : (
-        <div className="space-y-2.5">
+        <ListaAnimada className="space-y-2.5">
           {ots.map((ot) => (
-            <Link
-              key={ot.id}
-              href={`/ots/${ot.id}`}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3.5"
-            >
-              <div className="min-w-0">
-                <p className="text-[15px] font-semibold text-foreground">{ot.numero}</p>
-                <p className="truncate text-[13px] text-mutado">
-                  {ot.cliente.nombre} · {ot.vehiculo.patente}
-                </p>
-              </div>
-              <span className="shrink-0 rounded-full bg-primario-suave px-2.5 py-1 text-[11px] font-semibold text-primario">
-                {ETIQUETAS_ESTADO[ot.estado]}
-              </span>
-            </Link>
+            <ItemAnimado key={ot.id}>
+              <Link
+                href={`/ots/${ot.id}`}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3.5"
+              >
+                <div className="min-w-0">
+                  <p className="text-[15px] font-semibold text-foreground">{ot.numero}</p>
+                  <p className="truncate text-[13px] text-mutado">
+                    {ot.cliente.nombre} · {ot.vehiculo.patente}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-primario-suave px-2.5 py-1 text-[11px] font-semibold text-primario">
+                  {ETIQUETAS_ESTADO[ot.estado]}
+                </span>
+              </Link>
+            </ItemAnimado>
           ))}
-        </div>
+        </ListaAnimada>
       )}
     </section>
   );

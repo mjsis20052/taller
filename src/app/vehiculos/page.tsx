@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { ListaAnimada, ItemAnimado } from "@/components/lista-animada";
 
 export const metadata: Metadata = { title: "Vehículos" };
 
@@ -62,29 +63,30 @@ export default async function PaginaVehiculos({
           }
         />
       ) : (
-        <div className="space-y-2.5">
+        <ListaAnimada className="space-y-2.5">
           {vehiculos.map((vehiculo) => (
-            <Link
-              key={vehiculo.id}
-              href={`/vehiculos/${vehiculo.id}`}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3.5 active:bg-black/[0.03]"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-[15px] font-semibold text-foreground">
-                  {vehiculo.patente} · {vehiculo.marca} {vehiculo.modelo}
-                </p>
-                <p className="mt-0.5 truncate text-[13px] text-mutado">
-                  {vehiculo.cliente.nombre}
-                </p>
-              </div>
-              {!vehiculo.activo && (
-                <span className="shrink-0 rounded-full bg-alerta-suave px-2.5 py-1 text-[11px] font-semibold text-alerta">
-                  Inactivo
-                </span>
-              )}
-            </Link>
+            <ItemAnimado key={vehiculo.id}>
+              <Link
+                href={`/vehiculos/${vehiculo.id}`}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3.5 active:bg-black/[0.03]"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-[15px] font-semibold text-foreground">
+                    {vehiculo.patente} · {vehiculo.marca} {vehiculo.modelo}
+                  </p>
+                  <p className="mt-0.5 truncate text-[13px] text-mutado">
+                    {vehiculo.cliente.nombre}
+                  </p>
+                </div>
+                {!vehiculo.activo && (
+                  <span className="shrink-0 rounded-full bg-alerta-suave px-2.5 py-1 text-[11px] font-semibold text-alerta">
+                    Inactivo
+                  </span>
+                )}
+              </Link>
+            </ItemAnimado>
           ))}
-        </div>
+        </ListaAnimada>
       )}
     </section>
   );

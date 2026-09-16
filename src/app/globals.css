@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #eef1f6;
-  --foreground: #10182b;
+  --background: #eef1f7;
+  --foreground: #0f1629;
   --primario: #1d4ed8;
   --primario-fuerte: #1638a8;
   --primario-suave: #e7edfd;
   --superficie: #ffffff;
-  --borde: #e1e5ee;
+  --borde: #e2e6f0;
   --mutado: #5b6478;
   --exito: #15803d;
   --exito-suave: #e7f6ec;
@@ -15,6 +15,8 @@
   --alerta-suave: #fdf1e0;
   --peligro: #b91c1c;
   --peligro-suave: #fbe9e9;
+  --sombra-tarjeta: 0 1px 2px rgba(15, 22, 41, 0.04), 0 2px 6px rgba(15, 22, 41, 0.04);
+  --sombra-flotante: 0 12px 28px -8px rgba(15, 22, 41, 0.22);
 }
 
 @theme inline {
@@ -40,4 +42,41 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Profundidad sutil para toda tarjeta del sistema, sin tocar cada
+   componente: Tailwind ya emite esta combinación de clases en el DOM. */
+.border.border-borde.bg-superficie {
+  box-shadow: var(--sombra-tarjeta);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+a.border.border-borde.bg-superficie:active,
+button.border.border-borde.bg-superficie:active {
+  transform: scale(0.98);
+}
+
+/* Botones primarios: leve profundidad y feedback táctil. */
+button.bg-primario,
+a.bg-primario {
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--primario) 55%, transparent);
+  transition: box-shadow 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+}
+
+button.bg-primario:active:not(:disabled),
+a.bg-primario:active {
+  transform: scale(0.98);
+  box-shadow: 0 3px 10px -4px color-mix(in srgb, var(--primario) 55%, transparent);
+}
+
+input,
+select,
+textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primario) 16%, transparent);
 }

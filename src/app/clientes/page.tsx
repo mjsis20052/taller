@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { TarjetaCliente } from "@/components/tarjeta-cliente";
+import { ListaAnimada, ItemAnimado } from "@/components/lista-animada";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -77,11 +78,13 @@ export default async function PaginaClientes({
           }
         />
       ) : (
-        <div className="space-y-2.5">
+        <ListaAnimada className="space-y-2.5">
           {clientes.map((cliente) => (
-            <TarjetaCliente key={cliente.id} cliente={cliente} />
+            <ItemAnimado key={cliente.id}>
+              <TarjetaCliente cliente={cliente} />
+            </ItemAnimado>
           ))}
-        </div>
+        </ListaAnimada>
       )}
     </section>
   );

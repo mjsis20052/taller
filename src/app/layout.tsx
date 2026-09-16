@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { NavegacionInferior } from "@/components/navegacion-inferior";
 import { RegistroServiceWorker } from "@/components/registro-service-worker";
 import { BotonVolver } from "@/components/boton-volver";
+import { TransicionPagina } from "@/components/transicion-pagina";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -75,7 +76,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
         <main className="mx-auto w-full max-w-lg flex-1 px-4 pt-5 pb-28">
-          {children}
+          <TransicionPagina>{children}</TransicionPagina>
         </main>
         <NavegacionInferior />
         <RegistroServiceWorker />
