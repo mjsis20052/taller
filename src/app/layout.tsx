@@ -31,13 +31,21 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Taller",
   },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    // Next ya emite mobile-web-app-capable; este es el tag viejo que
+    // todavía necesitan versiones de iOS anteriores a la 11.3.
+    "apple-mobile-web-app-capable": "yes",
+  },
   icons: {
     icon: [
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
 };

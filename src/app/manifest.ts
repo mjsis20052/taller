@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+const TAMANOS_ANY = [72, 96, 128, 144, 152, 180, 192, 384, 512];
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Taller — Gestión del taller mecánico",
@@ -8,15 +10,28 @@ export default function manifest(): MetadataRoute.Manifest {
       "Gestión integral del taller mecánico: turnos, órdenes de trabajo, clientes y vehículos.",
     id: "/",
     start_url: "/",
+    scope: "/",
     display: "standalone",
+    display_override: ["standalone", "minimal-ui"],
     orientation: "portrait",
     lang: "es-AR",
-    background_color: "#f5f5f5",
+    dir: "ltr",
+    background_color: "#eef1f7",
     theme_color: "#1d4ed8",
+    categories: ["business", "productivity"],
     icons: [
-      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      ...TAMANOS_ANY.map((tamano) => ({
+        src: `/icons/icon-${tamano}.png`,
+        sizes: `${tamano}x${tamano}`,
+        type: "image/png" as const,
+        purpose: "any" as const,
+      })),
+      {
+        src: "/icons/icon-512-maskable.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
     ],
   };
 }

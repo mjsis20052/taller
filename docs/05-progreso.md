@@ -266,6 +266,45 @@
   mientras corre `npm run dev` — pero no hay nada público ni
   persistente. Definir dónde y cómo desplegar queda pendiente.
 
+- (PWA) Set completo de íconos generado con `next/og` (ImageResponse,
+  ya viene con Next, no se sumó dependencia nueva): 72 a 512px "any"
+  con esquinas redondeadas, uno "maskable" 512 sin bordes propios
+  (Android/Chrome aplica su propia máscara), y apple-touch-icon
+  180x180 sin transparencia (como pide iOS). El script que los generó
+  era temporal (`.tmp-scripts/`, borrado) — si hay que regenerarlos
+  con otro diseño, no quedó guardado, avisar para rehacerlo.
+- (PWA) manifest.ts ampliado: `scope`, `display_override`,
+  `categories`, `dir`, y el set completo de íconos con su `purpose`.
+- (PWA) layout.tsx: favicon 180x180 propio para iOS (antes reusaba el
+  de 192 sin redimensionar), agregado el meta tag viejo
+  `apple-mobile-web-app-capable` (necesario en iOS < 11.3; Next ya
+  emite el moderno `mobile-web-app-capable` solo) y
+  `formatDetection.telephone: false` (evita que iOS auto-detecte
+  números de teléfono como links y rompa el diseño).
+- (PWA) Página /offline + sw.js con manejo real: en vez de solo
+  instalar/activar (lo de antes), ahora intercepta navegaciones y
+  si falla el fetch por falta de red muestra /offline en vez del
+  error feo del navegador. Deliberadamente NO cachea datos del
+  taller (clientes, OTs, etc.) — mostrar información vieja como si
+  fuera actual sería peor que mostrar que no hay conexión; eso
+  sigue siendo "fase futura" como ya decía la Tarea 1.
+- (PWA) LIMITADO: no pude verificar el registro real del service
+  worker en el navegador de pruebas de esta sesión — devuelve
+  "unknown error fetching the script" al registrar, aunque `curl`
+  confirma que `/sw.js` se sirve bien (200, content-type correcto)
+  y el archivo tiene sintaxis JS válida. Es probable que sea una
+  restricción del navegador automatizado en modo sandbox (común que
+  bloqueen Service Workers), no un bug de la app — pero no lo pude
+  confirmar de forma concluyente. Habría que probarlo en un Chrome
+  o Safari real, y sobre todo instalar la app en un Android y un
+  iPhone de verdad ("Agregar a inicio") para confirmar que funciona
+  como PWA instalada — eso no se puede hacer desde acá.
+- (PWA) NO se generaron pantallas de splash específicas para iOS
+  (`apple-touch-startup-image`, que requiere una imagen por cada
+  resolución de iPhone/iPad). iOS 16.4+ arma una pantalla de carga
+  básica sola a partir del manifest (background_color + ícono), así
+  que no debería verse roto, pero no es una splash a medida.
+
 ## Pendientes de definición
 - API del estudio contable (bloquea solo Fase 4/5; v1 usa cola manual).
 - Deploy a producción (decisión posterior: VPS, PaaS, etc.).
