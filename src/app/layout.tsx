@@ -5,6 +5,8 @@ import { NavegacionInferior } from "@/components/navegacion-inferior";
 import { RegistroServiceWorker } from "@/components/registro-service-worker";
 import { BotonVolver } from "@/components/boton-volver";
 import { TransicionPagina } from "@/components/transicion-pagina";
+import { CampanaNotificaciones } from "@/components/campana-notificaciones";
+import { obtenerAlertas } from "@/lib/alertas";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,7 +49,9 @@ export const viewport: Viewport = {
   themeColor: "#1d4ed8",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const alertas = await obtenerAlertas();
+
   return (
     <html
       lang="es-AR"
@@ -63,16 +67,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <span className="text-[15px] font-bold tracking-tight text-foreground">
               Taller
             </span>
-            <Link
-              href="/buscar"
-              aria-label="Buscar por patente, nombre o teléfono"
-              className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg text-mutado active:bg-black/5"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-            </Link>
+            <div className="ml-auto flex items-center gap-1">
+              <CampanaNotificaciones alertas={alertas} />
+              <Link
+                href="/buscar"
+                aria-label="Buscar por patente, nombre o teléfono"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-mutado active:bg-black/5"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+              </Link>
+            </div>
           </div>
         </header>
         <main className="mx-auto w-full max-w-lg flex-1 px-4 pt-5 pb-28">
