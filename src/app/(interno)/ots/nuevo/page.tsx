@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { FormularioNuevaOT } from "@/components/formulario-nueva-ot";
 import { crearOT } from "@/app/(interno)/ots/actions";
+import { limpiarMotivoPortal } from "@/lib/turno-portal";
 
 export const metadata: Metadata = { title: "Nueva OT" };
 
@@ -30,7 +31,7 @@ export default async function PaginaNuevaOT({
         accion={crearOT.bind(null, turno?.id ?? null)}
         clienteInicial={turno?.cliente}
         vehiculoIdInicial={turno?.vehiculoId}
-        motivoInicial={turno?.motivo}
+        motivoInicial={turno ? limpiarMotivoPortal(turno.motivo) : undefined}
       />
     </section>
   );

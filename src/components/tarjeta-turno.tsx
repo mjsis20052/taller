@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { esPedidoDePortal, limpiarMotivoPortal } from "@/lib/turno-portal";
 import { cancelarTurno } from "@/app/(interno)/agenda/actions";
 
 const ETIQUETAS_ESTADO: Record<string, { texto: string; clase: string }> = {
@@ -41,11 +42,19 @@ export function TarjetaTurno({
       }).format(turno.fechaHora)
     : null;
 
+  const fechaCorta = new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "short",
+    timeZone: "America/Argentina/Buenos_Aires",
+  }).format(turno.fechaHora);
+
   const estado = ETIQUETAS_ESTADO[turno.estado] ?? ETIQUETAS_ESTADO.AGENDADO;
-  const textoWhatsapp = `Hola ${turno.cliente.nombre.split(" ")[0]}! Te recuerdo tu turno en el taller el ${new Intl.DateTimeFormat(
-    "es-AR",
-    { dateStyle: "short", timeZone: "America/Argentina/Buenos_Aires" },
-  ).format(turno.fechaHora)} a las ${hora} hs (${turno.motivo}). ¡Te esperamos!`;
+  const esDePortal = esPedidoDePortal(turno.motivo);
+  const motivoLimpio = limpiarMotivoPortal(turno.motivo);
+  const nombrePila = turno.cliente.nombre.split(" ")[0];
+
+  const textoWhatsapp = esDePortal
+    ? `Hola ${nombrePila}! Recibimos tu pedido de turno para el ${fechaCorta} a las ${hora} hs (${motivoLimpio}). Te lo confirmamos, ¡te esperamos!`
+    : `Hola ${nombrePila}! Te recuerdo tu turno en el taller el ${fechaCorta} a las ${hora} hs (${motivoLimpio}). ¡Te esperamos!`;
 
   return (
     <div className="rounded-2xl border border-borde bg-superficie p-4">
@@ -55,16 +64,23 @@ export function TarjetaTurno({
           {fecha && <span className="text-[12.5px] text-mutado">{fecha}</span>}
           <span className="text-[12.5px] text-mutado">· {turno.duracionMin} min</span>
         </div>
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${estado.clase}`}>
-          {estado.texto}
-        </span>
+        <div className="flex shrink-0 gap-1.5">
+          {esDePortal && (
+            <span className="rounded-full bg-exito-suave px-2.5 py-1 text-[11px] font-semibold text-exito">
+              Pedido web
+            </span>
+          )}
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${estado.clase}`}>
+            {estado.texto}
+          </span>
+        </div>
       </div>
 
       <p className="mt-2 text-[15px] font-semibold text-foreground">{turno.cliente.nombre}</p>
       <p className="text-[13px] text-mutado">
         {turno.vehiculo.patente} · {turno.vehiculo.marca} {turno.vehiculo.modelo}
       </p>
-      <p className="mt-1 text-[13.5px] text-foreground">{turno.motivo}</p>
+      <p className="mt-1 text-[13.5px] text-foreground">{motivoLimpio}</p>
 
       {turno.estado === "AGENDADO" && (
         <div className="mt-3 space-y-2">
@@ -81,7 +97,7 @@ export function TarjetaTurno({
               rel="noreferrer"
               className="flex-1 rounded-lg bg-exito-suave py-2 text-center text-[12.5px] font-semibold text-exito"
             >
-              Recordar
+              {esDePortal ? "Confirmar por WhatsApp" : "Recordar"}
             </a>
             <Link
               href={`/agenda/${turno.id}/editar`}

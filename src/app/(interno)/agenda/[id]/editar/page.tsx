@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { FormularioTurno } from "@/components/formulario-turno";
 import { actualizarTurno } from "@/app/(interno)/agenda/actions";
+import { limpiarMotivoPortal } from "@/lib/turno-portal";
 
 export const metadata: Metadata = { title: "Editar turno" };
 
@@ -42,7 +43,7 @@ export default async function PaginaEditarTurno({
         clienteInicial={turno.cliente}
         vehiculoIdInicial={turno.vehiculoId}
         valoresIniciales={{
-          motivo: turno.motivo,
+          motivo: limpiarMotivoPortal(turno.motivo),
           fecha,
           hora,
           duracionMin: turno.duracionMin,
