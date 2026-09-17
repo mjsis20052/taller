@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ConsultaPatentePublica } from "@/components/consulta-patente-publica";
 import { HeroPublico } from "@/components/hero-publico";
 import { FeaturesPublico } from "@/components/features-publico";
 import { ComoFunciona } from "@/components/como-funciona";
 import { IlustracionHerramientas } from "@/components/ilustracion-herramientas";
+import { BotonPedirTurno } from "@/components/boton-pedir-turno";
 
 export const metadata: Metadata = {
   title: "Consultá tu vehículo o pedí un turno",
@@ -47,12 +47,9 @@ export default function PaginaPortal() {
           <p className="mx-auto mt-2 max-w-[42ch] text-[14.5px] text-white/85">
             Pedilo online en un minuto, sin llamar ni esperar. Te confirmamos por WhatsApp.
           </p>
-          <Link
-            href="/portal/turno"
-            className="mt-5 inline-block rounded-xl bg-white px-7 py-3.5 text-[15px] font-semibold text-primario"
-          >
+          <BotonPedirTurno className="mt-5 inline-block rounded-xl bg-white px-7 py-3.5 text-[15px] font-semibold text-primario">
             Pedir turno online
-          </Link>
+          </BotonPedirTurno>
         </div>
       </section>
     </div>

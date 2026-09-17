@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BotonPedirTurno } from "@/components/boton-pedir-turno";
 
 export default function LayoutPublico({
   children,
@@ -15,12 +15,9 @@ export default function LayoutPublico({
           <span className="text-[16px] font-bold tracking-tight text-foreground">
             Taller
           </span>
-          <Link
-            href="/portal/turno"
-            className="ml-auto rounded-xl bg-primario px-4 py-2 text-[13.5px] font-semibold text-white"
-          >
+          <BotonPedirTurno className="ml-auto rounded-xl bg-primario px-4 py-2 text-[13.5px] font-semibold text-white">
             Pedir turno
-          </Link>
+          </BotonPedirTurno>
         </div>
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-8">{children}</main>

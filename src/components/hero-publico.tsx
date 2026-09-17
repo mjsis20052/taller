@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { IlustracionAuto } from "@/components/ilustracion-auto";
+import { BotonPedirTurno } from "@/components/boton-pedir-turno";
 
 const subir = {
   oculto: { opacity: 0, y: 16 },
@@ -72,12 +72,9 @@ export function HeroPublico() {
             >
               Consultar mi vehículo
             </a>
-            <Link
-              href="/portal/turno"
-              className="rounded-xl border border-borde bg-superficie px-6 py-3.5 text-[14.5px] font-semibold text-foreground"
-            >
+            <BotonPedirTurno className="rounded-xl border border-borde bg-superficie px-6 py-3.5 text-[14.5px] font-semibold text-foreground">
               Pedir turno
-            </Link>
+            </BotonPedirTurno>
           </motion.div>
         </div>
 

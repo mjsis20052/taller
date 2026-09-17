@@ -428,6 +428,12 @@
   a propósito NO son fotos del taller real ni fotos de stock
   genéricas haciéndose pasar por el negocio; son placeholders fáciles
   de reemplazar el día que haya fotos de verdad.
+- (Portal) "Pedir turno" ahora abre un modal (bottom sheet con Vaul)
+  en vez de navegar a /portal/turno — se puede pedir el turno sin
+  perder el lugar en la landing, desde el header, el hero o el banner
+  final (src/components/boton-pedir-turno.tsx, reutiliza el mismo
+  FormularioTurnoPublico de siempre). La página /portal/turno se dejó
+  intacta como acceso directo por si alguien llega a esa URL.
 
 ## Pendientes de definición
 - Repositorio remoto: https://github.com/mjsis20052/taller.git
