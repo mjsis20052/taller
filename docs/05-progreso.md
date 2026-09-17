@@ -380,6 +380,55 @@
     fue terminar esto primero y desplegar después, así que no entré
     a ese proyecto todavía.
 
+- (Portal, ajustes tras uso real) El dueño probó el formulario público
+  con su propio teléfono/patente reales y la validación estricta
+  (formato internacional +54... / patente AAA123-AA123BB) los
+  rechazaba. Se sacó esa validación específicamente del portal
+  público — ahí ahora solo se pide que no estén vacíos, se normaliza
+  (mayúsculas, sin espacios/guiones) y listo. La validación estricta
+  SIGUE existiendo para el panel interno (src/lib/validaciones/), no
+  se tocó ahí.
+- (Portal) Horarios de atención configurables: nueva pantalla
+  /configuracion (Más → "Horarios de atención") donde el dueño define
+  apertura, cierre, duración de cada turno y qué días está cerrado
+  (guardado en el modelo Config, clave "horarios_turnos" —
+  src/lib/horarios.ts). El selector de horario del portal público ya
+  no es un campo de hora libre: es un <select> con los horarios que
+  salen de esa config, sacando los que ya están ocupados y los que ya
+  pasaron si la fecha es hoy. Se revalida en el servidor al enviar
+  (no alcanza con lo que mande el navegador).
+- (Portal) BUG real encontrado por el dueño: los pedidos de turno del
+  portal se guardaban bien pero no eran visibles a simple vista — la
+  Agenda por defecto muestra el día de hoy, y el pedido puede ser
+  para cualquier fecha futura. Se agregó una alerta en la campanita
+  ("N pedidos de turno desde la web sin confirmar") que linkea a
+  /agenda?vista=lista, contando turnos AGENDADO cuyo motivo todavía
+  tiene la marca de portal. Y como tocar "Confirmar por WhatsApp"
+  antes no dejaba ningún rastro (la alerta iba a quedar para
+  siempre), ahora también saca la marca del motivo al confirmar
+  (confirmarPedidoWeb en agenda/actions.ts) — se probó que el
+  contador de la campanita baja de verdad después de confirmar.
+- (Diagnóstico de red) El dueño no podía abrir la app desde el
+  celular con la IP que le había pasado (172.25.208.1) — es la IP de
+  un adaptador virtual de WSL/Hyper-V, no existe fuera de esta
+  máquina. La IP real de la placa Wi-Fi es otra (verificar con
+  `Get-NetIPAddress` — la de `InterfaceAlias "Wi-Fi"`, no la de
+  `vEthernet (WSL...)`). De paso quedó anotado algo raro en el
+  firewall de Windows: hay reglas para "Node.js JavaScript Runtime"
+  que BLOQUEAN entrante en redes "Privadas" y lo PERMITEN en
+  "Públicas" (al revés de lo esperable) — hoy no importa porque la
+  red de este equipo está categorizada como Pública, pero si en
+  algún momento Windows la recategoriza como Privada, la app va a
+  dejar de ser alcanzable desde el celular otra vez y va a hacer
+  falta revisar esas reglas (`Get-NetFirewallRule -DisplayName
+  "*node*"`).
+- (Landing) Se agregó una ilustración vectorial propia de un auto
+  (src/components/ilustracion-auto.tsx, con flotación suave vía
+  framer-motion) y una sección de 3 features con scroll-reveal —
+  a propósito NO son fotos del taller real ni fotos de stock
+  genéricas haciéndose pasar por el negocio; son placeholders fáciles
+  de reemplazar el día que haya fotos de verdad.
+
 ## Pendientes de definición
 - Repositorio remoto: https://github.com/mjsis20052/taller.git
   (rama master, todo el historial subido el 2026-09-15).

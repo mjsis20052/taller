@@ -1,8 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { solicitarTurnoPublico } from "@/app/(publico)/portal/actions";
+import {
+  obtenerHorariosDisponiblesPublico,
+  solicitarTurnoPublico,
+} from "@/app/(publico)/portal/actions";
 
 const estiloInput =
   "w-full rounded-xl border border-borde bg-superficie px-3.5 py-3 text-[15px] text-foreground outline-none focus:border-primario";
@@ -15,6 +18,24 @@ function hoyISO(): string {
 
 export function FormularioTurnoPublico() {
   const [estado, ejecutarAccion, enviando] = useActionState(solicitarTurnoPublico, {});
+  const [fecha, setFecha] = useState(hoyISO());
+  const [horarios, setHorarios] = useState<string[]>([]);
+  const [cargandoHorarios, setCargandoHorarios] = useState(true);
+
+  useEffect(() => {
+    let cancelado = false;
+    async function cargar() {
+      setCargandoHorarios(true);
+      const lista = await obtenerHorariosDisponiblesPublico(fecha);
+      if (cancelado) return;
+      setHorarios(lista);
+      setCargandoHorarios(false);
+    }
+    cargar();
+    return () => {
+      cancelado = true;
+    };
+  }, [fecha]);
 
   if (estado.ok) {
     return (
@@ -57,7 +78,7 @@ export function FormularioTurnoPublico() {
           type="tel"
           required
           className={estiloInput}
-          placeholder="+5491122334455"
+          placeholder="Ej: 2214567890"
         />
         {estado.telefono && <p className={estiloError}>{estado.telefono}</p>}
       </div>
@@ -70,7 +91,7 @@ export function FormularioTurnoPublico() {
           id="patente"
           name="patente"
           required
-          maxLength={7}
+          maxLength={8}
           className={`${estiloInput} uppercase`}
           placeholder="AB123CD"
         />
@@ -122,23 +143,39 @@ export function FormularioTurnoPublico() {
             type="date"
             required
             min={hoyISO()}
-            defaultValue={hoyISO()}
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
             className={estiloInput}
           />
           {estado.fecha && <p className={estiloError}>{estado.fecha}</p>}
         </div>
         <div>
           <label className={estiloLabel} htmlFor="hora">
-            Horario preferido
+            Horario disponible
           </label>
-          <input id="hora" name="hora" type="time" required defaultValue="09:00" className={estiloInput} />
+          <select id="hora" name="hora" required disabled={cargandoHorarios} className={estiloInput}>
+            {cargandoHorarios ? (
+              <option value="">Buscando horarios…</option>
+            ) : horarios.length === 0 ? (
+              <option value="">Sin horarios ese día</option>
+            ) : (
+              <>
+                <option value="">Elegí un horario…</option>
+                {horarios.map((h) => (
+                  <option key={h} value={h}>
+                    {h} hs
+                  </option>
+                ))}
+              </>
+            )}
+          </select>
           {estado.hora && <p className={estiloError}>{estado.hora}</p>}
         </div>
       </div>
 
       <motion.button
         type="submit"
-        disabled={enviando}
+        disabled={enviando || cargandoHorarios || horarios.length === 0}
         whileTap={{ scale: 0.98 }}
         className="w-full rounded-xl bg-primario py-4 text-[15px] font-semibold text-white disabled:opacity-60"
       >

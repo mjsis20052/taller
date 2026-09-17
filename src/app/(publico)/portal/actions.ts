@@ -1,9 +1,9 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { normalizarPatente, validarPatente } from "@/lib/validaciones/patente";
-import { validarTelefono } from "@/lib/validaciones/telefono";
+import { normalizarPatente } from "@/lib/validaciones/patente";
 import { MARCADOR_PEDIDO_PORTAL } from "@/lib/turno-portal";
+import { obtenerConfigHorarios, generarHorariosDelDia } from "@/lib/horarios";
 import { revalidatePath } from "next/cache";
 
 // ---------------------------------------------------------------------------
@@ -11,6 +11,11 @@ import { revalidatePath } from "next/cache";
 // A propósito devuelven lo MÍNIMO indispensable: nunca nombre, teléfono,
 // DNI/CUIT ni montos de otra persona. Conocer una patente no debería
 // alcanzar para ver quién es el dueño ni cuánto pagó.
+//
+// El teléfono y la patente NO se validan con un formato estricto acá (a
+// propósito, para no trabar a un cliente real con un formato raro) — solo
+// se pide que no estén vacíos. La validación estricta sigue existiendo
+// para el panel interno (src/lib/validaciones/).
 // ---------------------------------------------------------------------------
 
 const ETIQUETAS_ESTADO_PUBLICO: Record<string, string> = {
@@ -39,8 +44,8 @@ export async function consultarPatentePublico(
   formData: FormData,
 ): Promise<ResultadoConsultaPublica> {
   const patenteTexto = String(formData.get("patente") ?? "");
-  if (!validarPatente(patenteTexto)) {
-    return { error: "Ingresá una patente válida (ej: AB123CD)." };
+  if (!patenteTexto.trim()) {
+    return { error: "Ingresá la patente de tu vehículo." };
   }
   const patente = normalizarPatente(patenteTexto);
 
@@ -76,6 +81,55 @@ export async function consultarPatentePublico(
   };
 }
 
+// Horarios que puede elegir el cliente para una fecha dada, según lo que
+// el dueño configuró en /configuracion — sin los que ya están ocupados.
+export async function obtenerHorariosDisponiblesPublico(fecha: string): Promise<string[]> {
+  if (!fecha) return [];
+
+  const diaSemana = new Date(`${fecha}T12:00:00`).getDay();
+  const config = await obtenerConfigHorarios();
+  if (config.diasCerrado.includes(diaSemana)) return [];
+
+  const todos = generarHorariosDelDia(config);
+
+  const inicio = new Date(`${fecha}T00:00:00`);
+  const fin = new Date(`${fecha}T23:59:59.999`);
+  const ocupados = await prisma.turno.findMany({
+    where: { fechaHora: { gte: inicio, lte: fin }, estado: "AGENDADO" },
+    select: { fechaHora: true },
+  });
+  const horasOcupadas = new Set(
+    ocupados.map((t) =>
+      new Intl.DateTimeFormat("sv-SE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "America/Argentina/Buenos_Aires",
+      }).format(t.fechaHora),
+    ),
+  );
+
+  const esHoy = fecha === new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+  const ahoraMin = esHoy
+    ? Number(
+        new Intl.DateTimeFormat("es-AR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+          timeZone: "America/Argentina/Buenos_Aires",
+        })
+          .format(new Date())
+          .replace(":", ""),
+      )
+    : -1;
+
+  return todos.filter((h) => {
+    if (horasOcupadas.has(h)) return false;
+    if (esHoy && Number(h.replace(":", "")) <= ahoraMin) return false;
+    return true;
+  });
+}
+
 export type ErroresTurnoPublico = Partial<
   Record<"nombre" | "telefono" | "patente" | "marca" | "modelo" | "fecha" | "hora" | "motivo", string>
 > & { ok?: boolean };
@@ -95,17 +149,13 @@ export async function solicitarTurnoPublico(
 
   const errores: ErroresTurnoPublico = {};
   if (!nombre) errores.nombre = "Ingresá tu nombre.";
-  if (!telefono || !validarTelefono(telefono)) {
-    errores.telefono = "Formato internacional, ej: +5491122334455.";
-  }
-  if (!patenteTexto || !validarPatente(patenteTexto)) {
-    errores.patente = "Ingresá una patente válida (ej: AB123CD).";
-  }
+  if (!telefono) errores.telefono = "Ingresá tu teléfono.";
+  if (!patenteTexto) errores.patente = "Ingresá la patente de tu vehículo.";
   if (!motivo) errores.motivo = "Contanos brevemente qué necesita el vehículo.";
   if (!fecha) errores.fecha = "Elegí una fecha.";
   if (!hora) errores.hora = "Elegí un horario.";
 
-  const patente = validarPatente(patenteTexto) ? normalizarPatente(patenteTexto) : null;
+  const patente = patenteTexto ? normalizarPatente(patenteTexto) : null;
 
   let vehiculoExistente = null;
   if (patente) {
@@ -116,12 +166,18 @@ export async function solicitarTurnoPublico(
     }
   }
 
-  const fechaHora = fecha && hora ? new Date(`${fecha}T${hora}:00`) : null;
-  if (fechaHora && (Number.isNaN(fechaHora.getTime()) || fechaHora.getTime() < Date.now())) {
-    errores.hora = "Elegí una fecha y hora futuras.";
+  // El horario tiene que ser uno de los que ofrece el panel para esa
+  // fecha — no cualquiera. Se revalida acá, no solo en el navegador.
+  if (fecha && hora) {
+    const disponibles = await obtenerHorariosDisponiblesPublico(fecha);
+    if (!disponibles.includes(hora)) {
+      errores.hora = "Ese horario ya no está disponible, elegí otro.";
+    }
   }
 
   if (Object.keys(errores).length > 0) return errores;
+
+  const fechaHora = new Date(`${fecha}T${hora}:00`);
 
   await prisma.$transaction(async (tx) => {
     let cliente = await tx.cliente.findFirst({ where: { telefono } });
@@ -137,14 +193,16 @@ export async function solicitarTurnoPublico(
         data: { clienteId: cliente.id, patente, marca, modelo },
       });
     }
-    if (!vehiculo) throw new Error("no debería pasar: patente inválida ya filtrada arriba");
+    if (!vehiculo) throw new Error("no debería pasar: patente vacía ya filtrada arriba");
+
+    const config = await obtenerConfigHorarios();
 
     await tx.turno.create({
       data: {
         clienteId: cliente.id,
         vehiculoId: vehiculo.id,
-        fechaHora: fechaHora!,
-        duracionMin: 60,
+        fechaHora,
+        duracionMin: config.duracionMin,
         motivo: `${MARCADOR_PEDIDO_PORTAL}${motivo}`,
       },
     });

@@ -1,21 +1,29 @@
 import { prisma } from "@/lib/prisma";
 import { listarDeudores } from "@/lib/cuenta-corriente";
-import { EstadoOT } from "@/generated/prisma/enums";
+import { MARCADOR_PEDIDO_PORTAL } from "@/lib/turno-portal";
+import { EstadoOT, EstadoTurno } from "@/generated/prisma/enums";
 
 export type Alerta = { texto: string; href: string };
 
 export async function obtenerAlertas(): Promise<Alerta[]> {
-  const [repuestosActivos, deudores, presupuestosSinRespuesta, facturacionPendiente] =
+  const [repuestosActivos, deudores, presupuestosSinRespuesta, facturacionPendiente, pedidosWeb] =
     await Promise.all([
       prisma.repuesto.findMany({ where: { activo: true }, select: { stock: true, stockMinimo: true } }),
       listarDeudores(),
       prisma.ordenTrabajo.count({ where: { estado: EstadoOT.PRESUPUESTADO } }),
       prisma.solicitudFacturacion.count({ where: { estado: { in: ["PENDIENTE", "ENVIADA"] } } }),
+      prisma.turno.count({
+        where: { estado: EstadoTurno.AGENDADO, motivo: { startsWith: MARCADOR_PEDIDO_PORTAL } },
+      }),
     ]);
 
   const repuestosBajos = repuestosActivos.filter((r) => r.stock <= r.stockMinimo).length;
 
   return [
+    pedidosWeb > 0 && {
+      texto: `${pedidosWeb} pedido${pedidosWeb === 1 ? "" : "s"} de turno desde la web sin confirmar`,
+      href: "/agenda?vista=lista",
+    },
     repuestosBajos > 0 && {
       texto: `${repuestosBajos} repuesto${repuestosBajos === 1 ? "" : "s"} con stock bajo`,
       href: "/stock",

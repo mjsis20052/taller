@@ -12,6 +12,7 @@ const ENLACES = [
   { href: "/cobranzas", etiqueta: "Cobranzas y cuenta corriente" },
   { href: "/facturacion", etiqueta: "Facturación (cola manual)" },
   { href: "/reportes", etiqueta: "Reportes" },
+  { href: "/configuracion", etiqueta: "Horarios de atención (portal)" },
 ];
 
 export default function PaginaMas() {

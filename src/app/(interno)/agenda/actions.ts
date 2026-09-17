@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { EstadoTurno } from "@/generated/prisma/enums";
+import { esPedidoDePortal, limpiarMotivoPortal } from "@/lib/turno-portal";
 
 export type ErroresFormularioTurno = Partial<
   Record<"clienteId" | "vehiculoId" | "motivo" | "fecha" | "hora" | "duracionMin", string>
@@ -98,6 +99,23 @@ export async function cancelarTurno(id: string): Promise<void> {
     where: { id },
     data: { estado: EstadoTurno.CANCELADO },
   });
+  revalidatePath("/agenda");
+  revalidatePath("/");
+}
+
+// Se llama cuando el dueño toca "Confirmar por WhatsApp" en un pedido que
+// vino del portal: saca la marca de "pedido web" (se pasa a tratar como
+// un turno normal) para que no siga apareciendo como pendiente en la
+// campanita de notificaciones.
+export async function confirmarPedidoWeb(id: string): Promise<void> {
+  const turno = await prisma.turno.findUnique({ where: { id }, select: { motivo: true } });
+  if (!turno || !esPedidoDePortal(turno.motivo)) return;
+
+  await prisma.turno.update({
+    where: { id },
+    data: { motivo: limpiarMotivoPortal(turno.motivo) },
+  });
+
   revalidatePath("/agenda");
   revalidatePath("/");
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { esPedidoDePortal, limpiarMotivoPortal } from "@/lib/turno-portal";
-import { cancelarTurno } from "@/app/(interno)/agenda/actions";
+import { cancelarTurno, confirmarPedidoWeb } from "@/app/(interno)/agenda/actions";
 
 const ETIQUETAS_ESTADO: Record<string, { texto: string; clase: string }> = {
   AGENDADO: { texto: "Agendado", clase: "bg-primario-suave text-primario" },
@@ -95,6 +95,7 @@ export function TarjetaTurno({
               href={enlaceWhatsApp(turno.cliente.telefono, textoWhatsapp)}
               target="_blank"
               rel="noreferrer"
+              onClick={esDePortal ? () => confirmarPedidoWeb(turno.id) : undefined}
               className="flex-1 rounded-lg bg-exito-suave py-2 text-center text-[12.5px] font-semibold text-exito"
             >
               {esDePortal ? "Confirmar por WhatsApp" : "Recordar"}
