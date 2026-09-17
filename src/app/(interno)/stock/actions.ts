@@ -64,6 +64,41 @@ export async function crearRepuesto(
   redirect(`/stock/${repuesto.id}`);
 }
 
+// Para carga rápida desde el panel de escritorio: guarda y vuelve al
+// listado (no al detalle) para poder seguir cargando repuestos sin
+// interrupciones, uno atrás de otro.
+export async function crearRepuestoRapido(
+  _estadoPrevio: ErroresFormularioRepuesto,
+  formData: FormData,
+): Promise<ErroresFormularioRepuesto> {
+  const datos = leerDatos(formData);
+  const errores = validar(datos);
+  if (Object.keys(errores).length > 0) return errores;
+
+  await prisma.$transaction(async (tx) => {
+    const creado = await tx.repuesto.create({
+      data: {
+        descripcion: datos.descripcion,
+        codigo: datos.codigo || null,
+        proveedor: datos.proveedor || null,
+        stock: 0,
+        stockMinimo: datos.stockMinimo || 0,
+        costo: datos.costo,
+        precioVenta: datos.precioVenta,
+      },
+    });
+    if (datos.stock > 0) {
+      await tx.movimientoStock.create({
+        data: { repuestoId: creado.id, tipo: TipoMovimientoStock.ENTRADA, cantidad: datos.stock },
+      });
+      await tx.repuesto.update({ where: { id: creado.id }, data: { stock: datos.stock } });
+    }
+  });
+
+  revalidatePath("/stock");
+  redirect("/stock");
+}
+
 export async function actualizarRepuesto(
   id: string,
   _estadoPrevio: ErroresFormularioRepuesto,

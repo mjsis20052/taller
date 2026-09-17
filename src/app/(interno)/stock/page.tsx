@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { FormularioCargaRapidaStock } from "@/components/formulario-carga-rapida-stock";
 
 export const metadata: Metadata = { title: "Stock" };
 
@@ -35,6 +36,8 @@ export default async function PaginaStock({
     <section>
       <EncabezadoPagina titulo="Stock" descripcion="Repuestos, cantidades y alertas." />
 
+      <FormularioCargaRapidaStock />
+
       <div className="mb-4 flex gap-2">
         <form className="flex-1" action="/stock">
           <input
@@ -49,7 +52,7 @@ export default async function PaginaStock({
           href="/stock/nuevo"
           className="flex shrink-0 items-center justify-center rounded-xl bg-primario px-4 text-[14px] font-semibold text-white"
         >
-          Nuevo
+          Completo
         </Link>
       </div>
 
@@ -77,34 +80,84 @@ export default async function PaginaStock({
           }
         />
       ) : (
-        <div className="space-y-2.5">
-          {repuestos.map((r) => {
-            const bajo = r.stock <= r.stockMinimo;
-            return (
-              <Link
-                key={r.id}
-                href={`/stock/${r.id}`}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3.5"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-[15px] font-semibold text-foreground">
-                    {r.descripcion}
-                  </p>
-                  <p className="text-[13px] text-mutado">
-                    {r.codigo ? `${r.codigo} · ` : ""}${Number(r.precioVenta).toLocaleString("es-AR")}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                    bajo ? "bg-alerta-suave text-alerta" : "bg-primario-suave text-primario"
-                  }`}
+        <>
+          {/* Mobile: tarjetas apiladas, un toque para entrar al detalle. */}
+          <div className="space-y-2.5 lg:hidden">
+            {repuestos.map((r) => {
+              const bajo = r.stock <= r.stockMinimo;
+              return (
+                <Link
+                  key={r.id}
+                  href={`/stock/${r.id}`}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3.5"
                 >
-                  {r.stock} en stock
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-semibold text-foreground">
+                      {r.descripcion}
+                    </p>
+                    <p className="text-[13px] text-mutado">
+                      {r.codigo ? `${r.codigo} · ` : ""}${Number(r.precioVenta).toLocaleString("es-AR")}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      bajo ? "bg-alerta-suave text-alerta" : "bg-primario-suave text-primario"
+                    }`}
+                  >
+                    {r.stock} en stock
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Desktop: tabla para escanear el inventario de un vistazo. */}
+          <div className="hidden overflow-x-auto rounded-2xl border border-borde bg-superficie lg:block">
+            <table className="w-full text-left text-[13.5px]">
+              <thead>
+                <tr className="border-b border-borde text-[11.5px] uppercase tracking-wide text-mutado">
+                  <th className="px-4 py-3 font-semibold">Descripción</th>
+                  <th className="px-4 py-3 font-semibold">Código</th>
+                  <th className="px-4 py-3 font-semibold">Proveedor</th>
+                  <th className="px-4 py-3 text-right font-semibold">Costo</th>
+                  <th className="px-4 py-3 text-right font-semibold">Precio venta</th>
+                  <th className="px-4 py-3 text-right font-semibold">Stock</th>
+                </tr>
+              </thead>
+              <tbody>
+                {repuestos.map((r) => {
+                  const bajo = r.stock <= r.stockMinimo;
+                  return (
+                    <tr key={r.id} className="border-b border-borde last:border-0 hover:bg-black/[0.015]">
+                      <td className="px-4 py-3">
+                        <Link href={`/stock/${r.id}`} className="font-medium text-foreground hover:text-primario">
+                          {r.descripcion}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-mutado">{r.codigo ?? "—"}</td>
+                      <td className="px-4 py-3 text-mutado">{r.proveedor ?? "—"}</td>
+                      <td className="px-4 py-3 text-right text-mutado">
+                        ${Number(r.costo).toLocaleString("es-AR")}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium text-foreground">
+                        ${Number(r.precioVenta).toLocaleString("es-AR")}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                            bajo ? "bg-alerta-suave text-alerta" : "bg-primario-suave text-primario"
+                          }`}
+                        >
+                          {r.stock}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </section>
   );

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { ErroresFormularioVehiculo } from "@/app/(interno)/vehiculos/actions";
+import { CamposOpcionales } from "@/components/campos-opcionales";
 
 type VehiculoExistente = {
   patente: string;
@@ -81,47 +82,52 @@ export function FormularioVehiculo({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={estiloLabel} htmlFor="anio">
-            Año
-          </label>
-          <input
-            id="anio"
-            name="anio"
-            inputMode="numeric"
-            defaultValue={vehiculo?.anio ?? ""}
-            className={estiloInput}
-            placeholder="2018"
-          />
-          {errores.anio && <p className={estiloError}>{errores.anio}</p>}
+      <CamposOpcionales
+        etiqueta="Año, color, VIN…"
+        abiertoInicial={Boolean(vehiculo?.anio || vehiculo?.color || vehiculo?.vin)}
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={estiloLabel} htmlFor="anio">
+              Año
+            </label>
+            <input
+              id="anio"
+              name="anio"
+              inputMode="numeric"
+              defaultValue={vehiculo?.anio ?? ""}
+              className={estiloInput}
+              placeholder="2018"
+            />
+            {errores.anio && <p className={estiloError}>{errores.anio}</p>}
+          </div>
+          <div>
+            <label className={estiloLabel} htmlFor="color">
+              Color
+            </label>
+            <input
+              id="color"
+              name="color"
+              defaultValue={vehiculo?.color ?? ""}
+              className={estiloInput}
+              placeholder="opcional"
+            />
+          </div>
         </div>
+
         <div>
-          <label className={estiloLabel} htmlFor="color">
-            Color
+          <label className={estiloLabel} htmlFor="vin">
+            VIN / N° de chasis
           </label>
           <input
-            id="color"
-            name="color"
-            defaultValue={vehiculo?.color ?? ""}
+            id="vin"
+            name="vin"
+            defaultValue={vehiculo?.vin ?? ""}
             className={estiloInput}
             placeholder="opcional"
           />
         </div>
-      </div>
-
-      <div>
-        <label className={estiloLabel} htmlFor="vin">
-          VIN / N° de chasis
-        </label>
-        <input
-          id="vin"
-          name="vin"
-          defaultValue={vehiculo?.vin ?? ""}
-          className={estiloInput}
-          placeholder="opcional"
-        />
-      </div>
+      </CamposOpcionales>
 
       <button
         type="submit"
