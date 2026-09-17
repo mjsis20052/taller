@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import type { ErroresFormularioVehiculo } from "@/app/vehiculos/actions";
+import type { ErroresFormularioVehiculo } from "@/app/(interno)/vehiculos/actions";
 
 type VehiculoExistente = {
   patente: string;

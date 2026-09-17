@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { buscarClientesParaTurno, listarVehiculosDeCliente } from "@/app/agenda/actions";
+import { buscarClientesParaTurno, listarVehiculosDeCliente } from "@/app/(interno)/agenda/actions";
 
 type ClienteSeleccionado = { id: string; nombre: string; telefono: string };
 type Vehiculo = { id: string; patente: string; marca: string; modelo: string };

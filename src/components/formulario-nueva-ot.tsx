@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { SelectorClienteVehiculo } from "@/components/selector-cliente-vehiculo";
-import type { ErroresFormularioOT } from "@/app/ots/actions";
+import type { ErroresFormularioOT } from "@/app/(interno)/ots/actions";
 
 const estiloInput =
   "w-full rounded-xl border border-borde bg-superficie px-3.5 py-3 text-[15px] text-foreground outline-none focus:border-primario";

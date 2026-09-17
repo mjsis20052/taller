@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
-import { cancelarTurno } from "@/app/agenda/actions";
+import { cancelarTurno } from "@/app/(interno)/agenda/actions";
 
 const ETIQUETAS_ESTADO: Record<string, { texto: string; clase: string }> = {
   AGENDADO: { texto: "Agendado", clase: "bg-primario-suave text-primario" },

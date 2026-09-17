@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { agregarItemOT } from "@/app/ots/actions";
-import { listarRepuestosActivos } from "@/app/stock/actions";
+import { agregarItemOT } from "@/app/(interno)/ots/actions";
+import { listarRepuestosActivos } from "@/app/(interno)/stock/actions";
 
 const estiloInput =
   "w-full rounded-xl border border-borde bg-superficie px-3 py-2.5 text-[14px] text-foreground outline-none focus:border-primario";

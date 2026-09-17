@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { TipoPersona, CondicionFiscal } from "@/generated/prisma/enums";
-import type { ErroresFormularioCliente } from "@/app/clientes/actions";
+import type { ErroresFormularioCliente } from "@/app/(interno)/clientes/actions";
 
 type ClienteExistente = {
   nombre: string;

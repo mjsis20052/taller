@@ -8,9 +8,9 @@ import {
   cargarPresupuesto,
   responderPresupuesto,
   saltarAEjecucion,
-} from "@/app/ots/actions";
-import { entregarSinFacturar, generarSolicitudFacturacion } from "@/app/facturacion/actions";
-import { registrarCobro } from "@/app/cobranzas/actions";
+} from "@/app/(interno)/ots/actions";
+import { entregarSinFacturar, generarSolicitudFacturacion } from "@/app/(interno)/facturacion/actions";
+import { registrarCobro } from "@/app/(interno)/cobranzas/actions";
 
 const ETIQUETAS_ESTADO_SOLICITUD: Record<string, string> = {
   PENDIENTE: "Sin enviar todavía",

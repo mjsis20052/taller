@@ -6,8 +6,8 @@ import {
   buscarClientesParaTurno,
   listarServiciosFrecuentes,
   listarVehiculosDeCliente,
-} from "@/app/agenda/actions";
-import type { ErroresFormularioTurno } from "@/app/agenda/actions";
+} from "@/app/(interno)/agenda/actions";
+import type { ErroresFormularioTurno } from "@/app/(interno)/agenda/actions";
 
 type ClienteSeleccionado = { id: string; nombre: string; telefono: string };
 type Vehiculo = { id: string; patente: string; marca: string; modelo: string };

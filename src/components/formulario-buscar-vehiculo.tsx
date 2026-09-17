@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   asignarVehiculoACliente,
   listarVehiculosParaAsignar,
-} from "@/app/vehiculos/actions";
+} from "@/app/(interno)/vehiculos/actions";
 
 const estiloInput =
   "w-full rounded-xl border border-borde bg-superficie px-3.5 py-3 text-[15px] text-foreground outline-none focus:border-primario uppercase";

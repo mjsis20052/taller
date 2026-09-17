@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import {
   eliminarFotoVehiculo,
   subirFotoVehiculo,
-} from "@/app/vehiculos/actions";
+} from "@/app/(interno)/vehiculos/actions";
 
 export function GaleriaFotosVehiculo({
   vehiculoId,

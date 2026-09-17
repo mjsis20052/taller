@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import type { ErroresFormularioRepuesto } from "@/app/stock/actions";
+import type { ErroresFormularioRepuesto } from "@/app/(interno)/stock/actions";
 
 type RepuestoExistente = {
   descripcion: string;
