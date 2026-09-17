@@ -306,6 +306,8 @@
   que no debería verse roto, pero no es una splash a medida.
 
 ## Pendientes de definición
+- Repositorio remoto: https://github.com/mjsis20052/taller.git
+  (rama master, todo el historial subido el 2026-09-15).
 - API del estudio contable (bloquea solo Fase 4/5; v1 usa cola manual).
 - Deploy a producción (decisión posterior: VPS, PaaS, etc.).
 - Vulnerabilidad npm en @prisma/config (ver nota de Tarea 2 arriba):
