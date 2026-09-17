@@ -1,10 +1,19 @@
 # Progreso del proyecto
 
+## ⚠️ LEER ANTES DE DESPLEGAR: este sistema NO TIENE LOGIN. Ninguna
+## ruta del panel interno pide contraseña — quien tenga la URL entra
+## y ve todo (clientes, teléfonos, totales de OT, cobranzas). Hasta
+## ahora esto no importaba porque solo corría en localhost. Ahora que
+## existe /portal (landing pública) pensada para internet, el panel
+## de gestión NO puede quedar detrás de la misma URL pública sin
+## alguna forma de login — aunque sea básico (un solo usuario, no
+## hace falta roles). Ver nota completa en "Landing pública" abajo.
+
 ## Fase actual: FASES 1 a 4 COMPLETAS. FASE 5 deliberadamente NO
 ## implementada (el PRD pide solo diseñar puntos de enganche: OCR,
 ## dictado, WhatsApp Business API, API real del estudio).
-## Tarea actual: ninguna pendiente en el roadmap original. Queda a
-## criterio del dueño qué pulir o si hace falta algo más.
+## Tarea actual: ninguna pendiente en el roadmap original. Antes de
+## desplegar en el VPS de compromiso, resolver el login (ver arriba).
 
 ## Hecho
 - [x] Sesión fundacional: documentación completa creada
@@ -304,6 +313,72 @@
   resolución de iPhone/iPad). iOS 16.4+ arma una pantalla de carga
   básica sola a partir del manifest (background_color + ícono), así
   que no debería verse roto, pero no es una splash a medida.
+
+- (Estructura) Todas las rutas del panel de gestión se movieron a
+  src/app/(interno)/ — un "route group" de Next.js, no cambia
+  ninguna URL (/clientes sigue siendo /clientes). Se hizo para poder
+  meter la landing pública en su propio grupo con su propio layout
+  (sin el header/nav del panel), sin que se pisen entre sí. El
+  layout raíz (src/app/layout.tsx) quedó como shell mínimo (html/
+  body/fuentes); el header, la nav inferior y las alertas se movieron
+  a src/app/(interno)/layout.tsx. Se aprovechó para ensanchar el
+  panel en pantallas grandes (max-w-4xl en vez de max-w-lg).
+- (Panel para PC) /stock tiene un formulario de "carga rápida" arriba
+  de la lista: guarda y se queda en la misma pantalla (en vez de ir
+  al detalle) para poder cargar repuestos uno atrás de otro sin
+  interrupciones — pensado para tipear rápido con teclado. Además la
+  lista se ve como tabla en pantallas grandes (lg:) y como tarjetas
+  en mobile, mismo patrón que se puede repetir en otras listas si
+  hace falta más adelante.
+- (Mobile más simple) Formularios de Cliente y Vehículo: los campos
+  secundarios quedan detrás de un "+ Más datos" colapsable
+  (src/components/campos-opcionales.tsx). Alta rápida en mobile:
+  Nombre+Teléfono (cliente) o Patente+Marca+Modelo (vehículo). Si el
+  registro que se edita ya tiene esos datos opcionales cargados, la
+  sección arranca abierta para no esconder información existente.
+- (Landing pública) src/app/(publico)/portal/ — nueva sección SIN
+  LOGIN, con su propio layout (sin el header/nav del panel interno):
+  - /portal: hero animado con framer-motion + consulta de vehículo
+    por patente. A propósito devuelve lo mínimo: patente, marca,
+    modelo y el estado en lenguaje simple ("listo para retirar",
+    etc.) — NUNCA nombre, teléfono, DNI/CUIT, fotos ni montos.
+    Conocer una patente no debería alcanzar para saber quién es el
+    dueño ni cuánto pagó.
+  - /portal/turno: pedido de turno público. Busca o crea el cliente
+    por teléfono y el vehículo por patente; si la patente ya
+    pertenece a otro cliente, NO se reasigna — se usa el vehículo tal
+    cual está, sin tocar su dueño (evita que alguien "robe" la
+    asignación de un auto adivinando la patente). El turno se crea
+    directo en AGENDADO, sin paso de confirmación previo — no hay
+    CAPTCHA ni verificación por SMS/email: para el tamaño de este
+    negocio agregar eso sería sobre-ingeniería, pero significa que
+    un pedido falso/de prueba entra igual que uno real (se cancela
+    fácil desde la Agenda si pasa).
+  - Como no existe integración con la API de WhatsApp Business (Fase
+    5), la "confirmación por WhatsApp" que se promete en la pantalla
+    de éxito la hace el DUEÑO a mano: los turnos que vienen del
+    portal se marcan (src/lib/turno-portal.ts) con un badge "Pedido
+    web" en la Agenda y un botón "Confirmar por WhatsApp" que abre
+    wa.me con el mensaje ya armado — un toque y listo, no hay que
+    escribir nada. El marcador técnico del motivo se limpia antes de
+    mostrarlo en cualquier pantalla (Agenda, editar turno, alta de
+    OT desde turno).
+  - **Riesgo real, no resuelto**: el panel interno completo (clientes,
+    teléfonos, totales de OT, cobranzas) sigue sin ningún login. Deployar
+    ambas cosas (portal público + panel interno) bajo el mismo dominio
+    público tal cual está hoy dejaría todos los datos del negocio
+    abiertos a cualquiera con la URL. Antes de desplegar en el VPS de
+    compromiso hay que decidir cómo proteger `(interno)` — lo más
+    simple: una sola contraseña compartida (matcheable con un
+    middleware de Next y una cookie), sin necesidad de un sistema de
+    usuarios completo dado que sigue siendo un solo dueño. No se
+    implementó porque no se pidió explícitamente y agregarlo sin
+    acuerdo hubiera sido una decisión de seguridad tomada por mi
+    cuenta — se las dejo planteada para decidir antes del despliegue.
+  - Tampoco se tocó el proyecto `compromiso-main` (el "diario") ni se
+    investigaron los datos del VPS mencionados — el pedido explícito
+    fue terminar esto primero y desplegar después, así que no entré
+    a ese proyecto todavía.
 
 ## Pendientes de definición
 - Repositorio remoto: https://github.com/mjsis20052/taller.git
