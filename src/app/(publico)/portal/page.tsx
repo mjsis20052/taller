@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ConsultaPatentePublica } from "@/components/consulta-patente-publica";
 import { HeroPublico } from "@/components/hero-publico";
+import { FeaturesPublico } from "@/components/features-publico";
 
 export const metadata: Metadata = {
   title: "Consultá tu vehículo o pedí un turno",
@@ -13,6 +14,8 @@ export default function PaginaPortal() {
   return (
     <div className="space-y-14">
       <HeroPublico />
+
+      <FeaturesPublico />
 
       <section id="consulta" className="scroll-mt-20">
         <h2 className="text-[22px] font-bold tracking-tight text-foreground">
