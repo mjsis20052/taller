@@ -93,6 +93,23 @@ export function HeroPublico() {
           >
             <IlustracionAuto className="w-full drop-shadow-xl" />
           </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.7, ease: "easeOut" }}
+            className="absolute -right-2 top-0 flex items-center gap-2 rounded-2xl border border-borde bg-superficie px-3.5 py-2.5 shadow-lg sm:right-4"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-exito-suave text-exito">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </span>
+            <div className="text-left">
+              <p className="text-[12px] font-semibold leading-tight text-foreground">Turno confirmado</p>
+              <p className="text-[10.5px] leading-tight text-mutado">por WhatsApp</p>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     </section>
