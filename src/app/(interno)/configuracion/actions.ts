@@ -2,29 +2,25 @@
 
 import { revalidatePath } from "next/cache";
 import { guardarConfigHorarios } from "@/lib/horarios";
+import { normalizarHoras } from "@/lib/horarios-comunes";
 
-export type ErroresConfigHorarios = Partial<Record<"apertura" | "cierre" | "duracionMin", string>>;
+export type ErroresConfigHorarios = { duracionMin?: string; ok?: boolean };
 
 export async function actualizarConfigHorarios(
   _estadoPrevio: ErroresConfigHorarios,
   formData: FormData,
 ): Promise<ErroresConfigHorarios> {
-  const apertura = String(formData.get("apertura") ?? "").trim();
-  const cierre = String(formData.get("cierre") ?? "").trim();
   const duracionMin = Number(formData.get("duracionMin") ?? 60);
-  const diasCerrado = formData.getAll("diasCerrado").map(Number);
+  if (!duracionMin || duracionMin < 5) return { duracionMin: "Duración inválida." };
 
-  const errores: ErroresConfigHorarios = {};
-  if (!apertura) errores.apertura = "Elegí un horario de apertura.";
-  if (!cierre) errores.cierre = "Elegí un horario de cierre.";
-  if (apertura && cierre && apertura >= cierre) {
-    errores.cierre = "Tiene que ser después de la apertura.";
+  const horarios: Record<number, string[]> = {};
+  for (let dia = 0; dia <= 6; dia++) {
+    horarios[dia] = normalizarHoras(formData.getAll(`horas-${dia}`).map(String));
   }
-  if (!duracionMin || duracionMin <= 0) errores.duracionMin = "Duración inválida.";
-  if (Object.keys(errores).length > 0) return errores;
 
-  await guardarConfigHorarios({ apertura, cierre, duracionMin, diasCerrado });
+  await guardarConfigHorarios({ duracionMin, horarios });
 
   revalidatePath("/configuracion");
-  return {};
+  revalidatePath("/portal");
+  return { ok: true };
 }

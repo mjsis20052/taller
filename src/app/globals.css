@@ -69,6 +69,25 @@ a.bg-primario:active {
   box-shadow: 0 3px 10px -4px color-mix(in srgb, var(--primario) 55%, transparent);
 }
 
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.cinta-marquee {
+  animation: marquee 32s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinta-marquee {
+    animation: none;
+  }
+}
+
 input,
 select,
 textarea {

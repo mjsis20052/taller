@@ -5,6 +5,9 @@ import { FeaturesPublico } from "@/components/features-publico";
 import { ComoFunciona } from "@/components/como-funciona";
 import { IlustracionHerramientas } from "@/components/ilustracion-herramientas";
 import { BotonPedirTurno } from "@/components/boton-pedir-turno";
+import { CintaServicios } from "@/components/cinta-servicios";
+import { ServiciosPublico } from "@/components/servicios-publico";
+import { HorariosPublico } from "@/components/horarios-publico";
 
 export const metadata: Metadata = {
   title: "Consultá tu vehículo o pedí un turno",
@@ -12,14 +15,22 @@ export const metadata: Metadata = {
     "Consultá el estado de tu vehículo por patente o pedí un turno online, sin llamar.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function PaginaPortal() {
   return (
     <div className="space-y-16">
       <HeroPublico />
 
+      <CintaServicios />
+
       <FeaturesPublico />
 
+      <ServiciosPublico />
+
       <ComoFunciona />
+
+      <HorariosPublico />
 
       <section id="consulta" className="scroll-mt-20">
         <h2 className="text-[22px] font-bold tracking-tight text-foreground">

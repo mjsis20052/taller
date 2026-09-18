@@ -1,45 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import { normalizarHoras, type ConfigHorarios } from "@/lib/horarios-comunes";
 
-export type ConfigHorarios = {
-  apertura: string; // "HH:mm"
-  cierre: string; // "HH:mm"
-  duracionMin: number;
-  diasCerrado: number[]; // 0 = domingo … 6 = sábado
-};
-
-const VALORES_POR_DEFECTO: ConfigHorarios = {
-  apertura: "09:00",
-  cierre: "18:00",
-  duracionMin: 60,
-  diasCerrado: [0],
-};
+export type { ConfigHorarios };
 
 const CLAVE = "horarios_turnos";
-
-export async function obtenerConfigHorarios(): Promise<ConfigHorarios> {
-  const fila = await prisma.config.findUnique({ where: { clave: CLAVE } });
-  if (!fila) return VALORES_POR_DEFECTO;
-
-  try {
-    const datos = JSON.parse(fila.valor);
-    return {
-      apertura: datos.apertura ?? VALORES_POR_DEFECTO.apertura,
-      cierre: datos.cierre ?? VALORES_POR_DEFECTO.cierre,
-      duracionMin: Number(datos.duracionMin) || VALORES_POR_DEFECTO.duracionMin,
-      diasCerrado: Array.isArray(datos.diasCerrado) ? datos.diasCerrado : VALORES_POR_DEFECTO.diasCerrado,
-    };
-  } catch {
-    return VALORES_POR_DEFECTO;
-  }
-}
-
-export async function guardarConfigHorarios(config: ConfigHorarios): Promise<void> {
-  await prisma.config.upsert({
-    where: { clave: CLAVE },
-    create: { clave: CLAVE, valor: JSON.stringify(config) },
-    update: { valor: JSON.stringify(config) },
-  });
-}
 
 function minutosDesde(horaTexto: string): number {
   const [h, m] = horaTexto.split(":").map(Number);
@@ -54,12 +18,59 @@ function formatearHora(minutos: number): string {
   return `${h}:${m}`;
 }
 
-export function generarHorariosDelDia(config: ConfigHorarios): string[] {
-  const inicio = minutosDesde(config.apertura);
-  const fin = minutosDesde(config.cierre);
-  const horarios: string[] = [];
-  for (let m = inicio; m < fin; m += config.duracionMin) {
-    horarios.push(formatearHora(m));
+function generarRango(apertura: string, cierre: string, duracionMin: number): string[] {
+  const horas: string[] = [];
+  for (let m = minutosDesde(apertura); m < minutosDesde(cierre); m += duracionMin) {
+    horas.push(formatearHora(m));
   }
-  return horarios;
+  return horas;
+}
+
+function porDefecto(): ConfigHorarios {
+  const laborables = generarRango("09:00", "18:00", 60);
+  return {
+    duracionMin: 60,
+    horarios: { 0: [], 1: laborables, 2: laborables, 3: laborables, 4: laborables, 5: laborables, 6: [] },
+  };
+}
+
+export async function obtenerConfigHorarios(): Promise<ConfigHorarios> {
+  const fila = await prisma.config.findUnique({ where: { clave: CLAVE } });
+  if (!fila) return porDefecto();
+
+  try {
+    const datos = JSON.parse(fila.valor);
+    const duracionMin = Number(datos.duracionMin) || 60;
+
+    if (datos.horarios && typeof datos.horarios === "object") {
+      const horarios: Record<number, string[]> = {};
+      for (let dia = 0; dia <= 6; dia++) {
+        const horas = datos.horarios[dia];
+        horarios[dia] = Array.isArray(horas) ? normalizarHoras(horas.map(String)) : [];
+      }
+      return { duracionMin, horarios };
+    }
+
+    // Formato anterior: apertura + cierre + duración + días cerrados.
+    const cerrados: number[] = Array.isArray(datos.diasCerrado) ? datos.diasCerrado : [0];
+    const rango = generarRango(datos.apertura ?? "09:00", datos.cierre ?? "18:00", duracionMin);
+    const horarios: Record<number, string[]> = {};
+    for (let dia = 0; dia <= 6; dia++) horarios[dia] = cerrados.includes(dia) ? [] : rango;
+    return { duracionMin, horarios };
+  } catch {
+    return porDefecto();
+  }
+}
+
+export async function guardarConfigHorarios(config: ConfigHorarios): Promise<void> {
+  const valor = JSON.stringify(config);
+  await prisma.config.upsert({
+    where: { clave: CLAVE },
+    create: { clave: CLAVE, valor },
+    update: { valor },
+  });
+}
+
+export function horariosDelDia(config: ConfigHorarios, diaSemana: number): string[] {
+  return config.horarios[diaSemana] ?? [];
 }

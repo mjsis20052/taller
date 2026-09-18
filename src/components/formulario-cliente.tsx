@@ -83,8 +83,9 @@ export function FormularioCliente({
           required
           defaultValue={cliente?.telefono}
           className={estiloInput}
-          placeholder="+5491122334455"
+          placeholder="2245506078"
         />
+        <p className="mt-1 text-[12px] text-mutado">Con el código de área. El +549 se agrega solo.</p>
         {errores.telefono && <p className={estiloError}>{errores.telefono}</p>}
       </div>
 

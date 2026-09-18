@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { validarCuit, validarDni } from "@/lib/validaciones/dni-cuit";
-import { validarTelefono } from "@/lib/validaciones/telefono";
+import { normalizarTelefono, validarTelefono } from "@/lib/validaciones/telefono";
 import type { CondicionFiscal, TipoPersona } from "@/generated/prisma/enums";
 
 export type ErroresFormularioCliente = Partial<
@@ -20,7 +20,7 @@ function leerDatosCliente(formData: FormData) {
     condicionFiscal: String(
       formData.get("condicionFiscal") ?? "CONSUMIDOR_FINAL",
     ) as CondicionFiscal,
-    telefono: String(formData.get("telefono") ?? "").trim(),
+    telefono: normalizarTelefono(String(formData.get("telefono") ?? "")),
     email: String(formData.get("email") ?? "").trim(),
     domicilio: String(formData.get("domicilio") ?? "").trim(),
     notas: String(formData.get("notas") ?? "").trim(),
@@ -44,7 +44,7 @@ function validarDatosCliente(
   if (!datos.telefono) {
     errores.telefono = "El teléfono es obligatorio.";
   } else if (!validarTelefono(datos.telefono)) {
-    errores.telefono = "Formato internacional, ej: +5491122334455.";
+    errores.telefono = "Teléfono inválido. Cargalo con el código de área, ej: 2245506078.";
   }
 
   return errores;

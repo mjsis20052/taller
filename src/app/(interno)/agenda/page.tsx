@@ -5,6 +5,7 @@ import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { TarjetaTurno } from "@/components/tarjeta-turno";
 import { EstadoTurno } from "@/generated/prisma/enums";
+import { MARCADOR_PEDIDO_PORTAL } from "@/lib/turno-portal";
 
 export const metadata: Metadata = { title: "Agenda" };
 
@@ -38,30 +39,57 @@ export default async function PaginaAgenda({
 
   const diasSemana = Array.from({ length: 7 }, (_, i) => sumarDias(fechaSeleccionada, i - 3));
 
+  const incluir = {
+    cliente: { select: { nombre: true, telefono: true } },
+    vehiculo: { select: { patente: true, marca: true, modelo: true } },
+  };
+  const sinPedidosWeb = { NOT: { motivo: { startsWith: MARCADOR_PEDIDO_PORTAL } } };
+
+  const porConfirmar = await prisma.turno.findMany({
+    where: { estado: EstadoTurno.AGENDADO, motivo: { startsWith: MARCADOR_PEDIDO_PORTAL } },
+    include: incluir,
+    orderBy: { fechaHora: "asc" },
+  });
+
   const turnos = esLista
     ? await prisma.turno.findMany({
-        where: {
-          estado: EstadoTurno.AGENDADO,
-          fechaHora: { gte: new Date() },
-        },
-        include: {
-          cliente: { select: { nombre: true, telefono: true } },
-          vehiculo: { select: { patente: true, marca: true, modelo: true } },
-        },
+        where: { estado: EstadoTurno.AGENDADO, fechaHora: { gte: new Date() }, ...sinPedidosWeb },
+        include: incluir,
         orderBy: { fechaHora: "asc" },
         take: 30,
       })
     : await prisma.turno.findMany({
-        where: { fechaHora: { gte: limitesDelDia(fechaSeleccionada).inicio, lte: limitesDelDia(fechaSeleccionada).fin } },
-        include: {
-          cliente: { select: { nombre: true, telefono: true } },
-          vehiculo: { select: { patente: true, marca: true, modelo: true } },
+        where: {
+          fechaHora: { gte: limitesDelDia(fechaSeleccionada).inicio, lte: limitesDelDia(fechaSeleccionada).fin },
+          ...sinPedidosWeb,
         },
+        include: incluir,
         orderBy: { fechaHora: "asc" },
       });
 
   return (
     <section>
+      {porConfirmar.length > 0 && (
+        <div id="por-confirmar" className="mb-6 scroll-mt-24 rounded-3xl border border-alerta/30 bg-alerta-suave p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-alerta px-1.5 text-[12px] font-bold text-white">
+              {porConfirmar.length}
+            </span>
+            <p className="text-[15px] font-bold text-foreground">
+              {porConfirmar.length === 1 ? "Turno por confirmar" : "Turnos por confirmar"}
+            </p>
+          </div>
+          <p className="mb-3 text-[12.5px] text-mutado">
+            Pedidos que hicieron los clientes desde la web. Confirmalos por WhatsApp para avisarles.
+          </p>
+          <div className="space-y-2.5">
+            {porConfirmar.map((turno) => (
+              <TarjetaTurno key={turno.id} turno={turno} mostrarFecha />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mb-5 flex items-start justify-between gap-3">
         <EncabezadoPagina titulo="Agenda" />
         <div className="flex shrink-0 gap-1 rounded-xl border border-borde bg-superficie p-1">

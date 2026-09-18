@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { IlustracionAuto } from "@/components/ilustracion-auto";
 import { BotonPedirTurno } from "@/components/boton-pedir-turno";
+import { Engranaje } from "@/components/engranaje";
 
 const subir = {
   oculto: { opacity: 0, y: 16 },
@@ -24,6 +25,12 @@ export function HeroPublico() {
       <div
         aria-hidden
         className="pointer-events-none absolute -right-20 top-10 h-64 w-64 rounded-full bg-exito-suave opacity-60 blur-3xl"
+      />
+      <Engranaje className="pointer-events-none absolute -left-10 top-40 h-44 w-44 text-primario/10" segundos={40} />
+      <Engranaje
+        className="pointer-events-none absolute -right-6 bottom-2 h-28 w-28 text-primario/15"
+        segundos={26}
+        sentido={-1}
       />
 
       <div className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">

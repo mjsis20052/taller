@@ -22,7 +22,7 @@ export async function obtenerAlertas(): Promise<Alerta[]> {
   return [
     pedidosWeb > 0 && {
       texto: `${pedidosWeb} pedido${pedidosWeb === 1 ? "" : "s"} de turno desde la web sin confirmar`,
-      href: "/agenda?vista=lista",
+      href: "/agenda#por-confirmar",
     },
     repuestosBajos > 0 && {
       texto: `${repuestosBajos} repuesto${repuestosBajos === 1 ? "" : "s"} con stock bajo`,

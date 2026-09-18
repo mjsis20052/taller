@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   // página queda en blanco cuando se entra por la IP de la red en
   // vez de localhost). Agregar acá cualquier IP nueva de la red.
   allowedDevOrigins: ["192.168.1.13", "172.25.208.1"],
+  // Bundle standalone para producción: el runtime del contenedor no
+  // necesita node_modules completo, así pesa y consume mucha menos
+  // RAM al arrancar (clave para VPS chicos).
+  output: "standalone",
 };
 
 export default nextConfig;

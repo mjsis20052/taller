@@ -2,8 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { normalizarPatente } from "@/lib/validaciones/patente";
+import { normalizarTelefono } from "@/lib/validaciones/telefono";
 import { MARCADOR_PEDIDO_PORTAL } from "@/lib/turno-portal";
-import { obtenerConfigHorarios, generarHorariosDelDia } from "@/lib/horarios";
+import { obtenerConfigHorarios, horariosDelDia } from "@/lib/horarios";
 import { revalidatePath } from "next/cache";
 
 // ---------------------------------------------------------------------------
@@ -88,9 +89,8 @@ export async function obtenerHorariosDisponiblesPublico(fecha: string): Promise<
 
   const diaSemana = new Date(`${fecha}T12:00:00`).getDay();
   const config = await obtenerConfigHorarios();
-  if (config.diasCerrado.includes(diaSemana)) return [];
-
-  const todos = generarHorariosDelDia(config);
+  const todos = horariosDelDia(config, diaSemana);
+  if (todos.length === 0) return [];
 
   const inicio = new Date(`${fecha}T00:00:00`);
   const fin = new Date(`${fecha}T23:59:59.999`);
@@ -139,7 +139,7 @@ export async function solicitarTurnoPublico(
   formData: FormData,
 ): Promise<ErroresTurnoPublico> {
   const nombre = String(formData.get("nombre") ?? "").trim();
-  const telefono = String(formData.get("telefono") ?? "").trim();
+  const telefono = normalizarTelefono(String(formData.get("telefono") ?? ""));
   const patenteTexto = String(formData.get("patente") ?? "").trim();
   const marca = String(formData.get("marca") ?? "").trim();
   const modelo = String(formData.get("modelo") ?? "").trim();

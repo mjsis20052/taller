@@ -1,46 +1,39 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { actualizarConfigHorarios } from "@/app/(interno)/configuracion/actions";
-import type { ConfigHorarios } from "@/lib/horarios";
+import { DIAS_SEMANA, esHoraValida, type ConfigHorarios } from "@/lib/horarios-comunes";
 
 const estiloInput =
   "w-full rounded-xl border border-borde bg-superficie px-3.5 py-3 text-[15px] text-foreground outline-none focus:border-primario";
 const estiloLabel = "block text-[13px] font-medium text-mutado mb-1.5";
-const estiloError = "mt-1 text-[12.5px] text-peligro";
-
-const DIAS = [
-  { valor: 0, etiqueta: "Domingo" },
-  { valor: 1, etiqueta: "Lunes" },
-  { valor: 2, etiqueta: "Martes" },
-  { valor: 3, etiqueta: "Miércoles" },
-  { valor: 4, etiqueta: "Jueves" },
-  { valor: 5, etiqueta: "Viernes" },
-  { valor: 6, etiqueta: "Sábado" },
-];
 
 export function FormularioHorarios({ config }: { config: ConfigHorarios }) {
-  const [errores, ejecutarAccion, enviando] = useActionState(actualizarConfigHorarios, {});
+  const [estado, ejecutarAccion, enviando] = useActionState(actualizarConfigHorarios, {});
+  const [horarios, setHorarios] = useState<Record<number, string[]>>(config.horarios);
+  const [nuevaHora, setNuevaHora] = useState<Record<number, string>>({});
+
+  function agregar(dia: number) {
+    const hora = nuevaHora[dia] ?? "";
+    if (!esHoraValida(hora)) return;
+    setHorarios((prev) => ({ ...prev, [dia]: [...new Set([...(prev[dia] ?? []), hora])].sort() }));
+    setNuevaHora((prev) => ({ ...prev, [dia]: "" }));
+  }
+
+  function quitar(dia: number, hora: string) {
+    setHorarios((prev) => ({ ...prev, [dia]: (prev[dia] ?? []).filter((h) => h !== hora) }));
+  }
+
+  function repetirEnLaborables(diaOrigen: number) {
+    setHorarios((prev) => {
+      const copia = { ...prev };
+      for (const dia of [1, 2, 3, 4, 5]) copia[dia] = [...(prev[diaOrigen] ?? [])];
+      return copia;
+    });
+  }
 
   return (
     <form action={ejecutarAccion} className="space-y-5">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={estiloLabel} htmlFor="apertura">
-            Apertura
-          </label>
-          <input id="apertura" name="apertura" type="time" required defaultValue={config.apertura} className={estiloInput} />
-          {errores.apertura && <p className={estiloError}>{errores.apertura}</p>}
-        </div>
-        <div>
-          <label className={estiloLabel} htmlFor="cierre">
-            Cierre
-          </label>
-          <input id="cierre" name="cierre" type="time" required defaultValue={config.cierre} className={estiloInput} />
-          {errores.cierre && <p className={estiloError}>{errores.cierre}</p>}
-        </div>
-      </div>
-
       <div>
         <label className={estiloLabel} htmlFor="duracionMin">
           Duración de cada turno (minutos)
@@ -49,34 +42,90 @@ export function FormularioHorarios({ config }: { config: ConfigHorarios }) {
           id="duracionMin"
           name="duracionMin"
           type="number"
-          min={15}
+          min={5}
           step={5}
           required
           defaultValue={config.duracionMin}
           className={estiloInput}
         />
-        {errores.duracionMin && <p className={estiloError}>{errores.duracionMin}</p>}
+        {estado.duracionMin && <p className="mt-1 text-[12.5px] text-peligro">{estado.duracionMin}</p>}
       </div>
 
-      <div>
-        <label className={estiloLabel}>Días cerrado</label>
-        <div className="grid grid-cols-2 gap-2">
-          {DIAS.map((dia) => (
-            <label
-              key={dia.valor}
-              className="flex items-center gap-2 rounded-xl border border-borde bg-superficie px-3.5 py-2.5 text-[14px]"
-            >
-              <input
-                type="checkbox"
-                name="diasCerrado"
-                value={dia.valor}
-                defaultChecked={config.diasCerrado.includes(dia.valor)}
-              />
-              {dia.etiqueta}
-            </label>
-          ))}
-        </div>
+      <div className="space-y-3">
+        <p className={estiloLabel}>Horarios de cada día</p>
+        {DIAS_SEMANA.map((dia) => {
+          const horas = horarios[dia.valor] ?? [];
+          return (
+            <div key={dia.valor} className="rounded-2xl border border-borde bg-superficie p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[15px] font-semibold text-foreground">{dia.etiqueta}</p>
+                {horas.length === 0 ? (
+                  <span className="rounded-full bg-peligro-suave px-2.5 py-1 text-[11px] font-semibold text-peligro">
+                    Cerrado
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => repetirEnLaborables(dia.valor)}
+                    className="text-[12px] font-semibold text-primario"
+                  >
+                    Repetir en lun–vie
+                  </button>
+                )}
+              </div>
+
+              {horas.map((hora) => (
+                <input key={hora} type="hidden" name={`horas-${dia.valor}`} value={hora} />
+              ))}
+
+              {horas.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {horas.map((hora) => (
+                    <span
+                      key={hora}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primario-suave py-1.5 pl-3 pr-2 text-[13.5px] font-semibold text-primario"
+                    >
+                      {hora}
+                      <button
+                        type="button"
+                        onClick={() => quitar(dia.valor, hora)}
+                        aria-label={`Quitar ${hora} del ${dia.etiqueta}`}
+                        className="flex h-5 w-5 items-center justify-center rounded-full text-[15px] leading-none hover:bg-primario hover:text-white"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="time"
+                  aria-label={`Nuevo horario para el ${dia.etiqueta}`}
+                  value={nuevaHora[dia.valor] ?? ""}
+                  onChange={(e) => setNuevaHora((prev) => ({ ...prev, [dia.valor]: e.target.value }))}
+                  className={estiloInput}
+                />
+                <button
+                  type="button"
+                  onClick={() => agregar(dia.valor)}
+                  disabled={!esHoraValida(nuevaHora[dia.valor] ?? "")}
+                  className="shrink-0 rounded-xl border border-borde bg-superficie px-4 text-[14px] font-semibold text-primario disabled:opacity-40"
+                >
+                  Agregar
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {estado.ok && !enviando && (
+        <p className="rounded-xl bg-exito-suave px-4 py-3 text-[13.5px] font-semibold text-exito">
+          Horarios guardados. Ya se ven en el portal.
+        </p>
+      )}
 
       <button
         type="submit"

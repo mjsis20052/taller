@@ -5,6 +5,9 @@ import { TransicionPagina } from "@/components/transicion-pagina";
 import { CampanaNotificaciones } from "@/components/campana-notificaciones";
 import { obtenerAlertas } from "@/lib/alertas";
 
+// Todo el panel lee la base en cada visita: nunca se pre-genera en el build.
+export const dynamic = "force-dynamic";
+
 export default async function LayoutInterno({
   children,
 }: {

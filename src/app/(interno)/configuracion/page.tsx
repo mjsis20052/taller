@@ -12,7 +12,7 @@ export default async function PaginaConfiguracion() {
     <section>
       <EncabezadoPagina
         titulo="Horarios de atención"
-        descripcion="Define qué horarios puede elegir un cliente al pedir un turno desde el portal."
+        descripcion="Cargá las horas exactas de cada día (ej: martes 10:00, 12:00 y 15:00). Solo esas puede elegir el cliente en el portal."
       />
       <FormularioHorarios config={config} />
     </section>
