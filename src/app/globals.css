@@ -1,25 +1,50 @@
 @import "tailwindcss";
 
 :root {
-  --background: #eef1f7;
-  --foreground: #0f1629;
-  --primario: #1d4ed8;
-  --primario-fuerte: #1638a8;
-  --primario-suave: #e7edfd;
+  color-scheme: light dark;
+
+  --background: #f4f5f9;
+  --foreground: #0f172a;
+  --primario: #6366f1;
+  --primario-fuerte: #4f46e5;
+  --primario-suave: #eef0ff;
   --superficie: #ffffff;
-  --borde: #e2e6f0;
-  --mutado: #5b6478;
-  --exito: #15803d;
-  --exito-suave: #e7f6ec;
+  --borde: #e5e7ef;
+  --mutado: #64748b;
+  --exito: #047857;
+  --exito-suave: #e3f5ec;
   --alerta: #b45309;
   --alerta-suave: #fdf1e0;
-  --peligro: #b91c1c;
-  --peligro-suave: #fbe9e9;
-  --sombra-tarjeta: 0 1px 2px rgba(15, 22, 41, 0.04), 0 2px 6px rgba(15, 22, 41, 0.04);
-  --sombra-flotante: 0 12px 28px -8px rgba(15, 22, 41, 0.22);
+  --peligro: #ef4444;
+  --peligro-suave: #fdeaea;
+  --sombra-tarjeta: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.04);
+  --sombra-flotante: 0 12px 28px -8px rgba(15, 23, 42, 0.22);
+}
+
+/* El modo (claro u oscuro) lo decide el celular, no hay botón. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b1020;
+    --foreground: #e8ecf8;
+    --primario: #818cf8;
+    --primario-fuerte: #6366f1;
+    --primario-suave: #1f2650;
+    --superficie: #151b30;
+    --borde: #242c47;
+    --mutado: #94a3b8;
+    --exito: #34d399;
+    --exito-suave: #10302a;
+    --alerta: #fbbf24;
+    --alerta-suave: #3a2c12;
+    --peligro: #ef4444;
+    --peligro-suave: #3a1c26;
+    --sombra-tarjeta: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.25);
+    --sombra-flotante: 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+  }
 }
 
 @theme inline {
+  --radius-2xl: 18px;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primario: var(--primario);
@@ -34,14 +59,30 @@
   --color-alerta-suave: var(--alerta-suave);
   --color-peligro: var(--peligro);
   --color-peligro-suave: var(--peligro-suave);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Números del mismo ancho: los precios y totales quedan alineados. */
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 800;
+}
+
+/* En oscuro el acento es claro: el texto de los botones va oscuro para leerse. */
+@media (prefers-color-scheme: dark) {
+  button.bg-primario,
+  a.bg-primario {
+    color: #0b1020;
+  }
 }
 
 /* Profundidad sutil para toda tarjeta del sistema, sin tocar cada

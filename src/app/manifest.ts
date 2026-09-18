@@ -16,8 +16,8 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     lang: "es-AR",
     dir: "ltr",
-    background_color: "#eef1f7",
-    theme_color: "#1d4ed8",
+    background_color: "#f4f5f9",
+    theme_color: "#6366f1",
     categories: ["business", "productivity"],
     icons: [
       ...TAMANOS_ANY.map((tamano) => ({

@@ -104,12 +104,12 @@ const SERVICIOS = [
 
 export function ServiciosPublico() {
   return (
-    <section className="relative -mx-5 overflow-hidden bg-linear-to-br from-[#0b1020] via-[#111d4a] to-[#1d4ed8] px-5 py-12 sm:mx-0 sm:rounded-3xl">
+    <section className="relative -mx-5 overflow-hidden bg-linear-to-br from-[#0b1020] via-[#1f2650] to-[#6366f1] px-5 py-12 sm:mx-0 sm:rounded-3xl">
       <div aria-hidden className="pointer-events-none absolute -left-16 -top-16 h-64 w-64 rounded-full bg-primario/40 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-20 -right-10 h-64 w-64 rounded-full bg-fuchsia-500/20 blur-3xl" />
 
       <div className="relative">
-        <p className="text-center text-[12.5px] font-semibold uppercase tracking-widest text-sky-300">
+        <p className="text-center text-[12.5px] font-semibold uppercase tracking-widest text-indigo-300">
           Lo que hacemos
         </p>
         <h2 className="mt-2 text-center text-[26px] font-bold tracking-tight text-white sm:text-[30px]">
