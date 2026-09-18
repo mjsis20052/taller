@@ -485,9 +485,13 @@
 - Las migraciones de Prisma no van dentro de la imagen: se aplican
   con el SQL de prisma/migrations directo en el contenedor de la base
   (y se registran en _prisma_migrations).
-- RIESGO ABIERTO: el panel interno sigue SIN login y hoy es público en
-  ese dominio (solo /portal debería serlo). Falta proteger todo lo que
-  no sea /portal (contraseña en nginx o login en la app).
+- Protección (2026-09-18): nginx pide usuario y clave (basic auth,
+  archivo /etc/nginx/.htpasswd-taller) para todo menos /portal, /_next,
+  /icons, /sw.js, /manifest.webmanifest y /offline. La clave actual es
+  PROVISORIA y débil (admin/admin): cambiarla cuanto antes con
+  `openssl passwd -apr1 NUEVA` en ese archivo. La app en sí sigue sin
+  login propio: si alguien saltea nginx (o se agrega otro acceso) el
+  panel queda abierto. Copia previa de la config: /root/taller.nginx.bak-antes-auth.
 
 ## Pendientes de definición
 - Repositorio remoto: https://github.com/mjsis20052/taller.git
