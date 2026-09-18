@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { TarjetaTurno } from "@/components/tarjeta-turno";
+import { CintaDiasAgenda, type DiaCinta } from "@/components/cinta-dias-agenda";
 import { EstadoTurno } from "@/generated/prisma/enums";
 import { MARCADOR_PEDIDO_PORTAL } from "@/lib/turno-portal";
 
@@ -11,6 +12,7 @@ export const metadata: Metadata = { title: "Agenda" };
 
 const ZONA = "America/Argentina/Buenos_Aires";
 const DIAS_SEMANA = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
 function hoyISO(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: ZONA });
@@ -37,7 +39,20 @@ export default async function PaginaAgenda({
   const fechaSeleccionada = fecha ?? hoyISO();
   const esLista = vista === "lista";
 
-  const diasSemana = Array.from({ length: 7 }, (_, i) => sumarDias(fechaSeleccionada, i - 3));
+  // Cinta deslizable: 2 semanas hacia atrás y ~3 meses hacia adelante (y siempre la fecha elegida).
+  const hoy = hoyISO();
+  const desde = fechaSeleccionada < hoy ? sumarDias(fechaSeleccionada, -14) : sumarDias(hoy, -14);
+  const hasta = fechaSeleccionada > sumarDias(hoy, 90) ? sumarDias(fechaSeleccionada, 14) : sumarDias(hoy, 90);
+  const diasCinta: DiaCinta[] = [];
+  for (let dia = desde; dia <= hasta; dia = sumarDias(dia, 1)) {
+    const fechaObj = new Date(`${dia}T12:00:00`);
+    diasCinta.push({
+      iso: dia,
+      diaSemana: DIAS_SEMANA[fechaObj.getDay()],
+      numero: fechaObj.getDate(),
+      mes: fechaObj.getDate() === 1 ? MESES[fechaObj.getMonth()] : null,
+    });
+  }
 
   const incluir = {
     cliente: { select: { nombre: true, telefono: true } },
@@ -112,37 +127,7 @@ export default async function PaginaAgenda({
         </div>
       </div>
 
-      {!esLista && (
-        <div className="mb-5 grid grid-cols-7 gap-1.5">
-          {diasSemana.map((dia) => {
-            const fechaObj = new Date(`${dia}T12:00:00`);
-            const esHoy = dia === hoyISO();
-            const esSeleccionado = dia === fechaSeleccionada;
-            return (
-              <Link
-                key={dia}
-                href={`/agenda?fecha=${dia}`}
-                className={`flex flex-col items-center gap-1 rounded-xl border py-2 text-center ${
-                  esSeleccionado
-                    ? "border-primario bg-primario text-white"
-                    : "border-borde bg-superficie text-foreground"
-                }`}
-              >
-                <span
-                  className={`text-[10.5px] font-medium uppercase ${
-                    esSeleccionado ? "text-white/80" : "text-mutado"
-                  }`}
-                >
-                  {DIAS_SEMANA[fechaObj.getDay()]}
-                </span>
-                <span className={`text-[15px] font-bold ${esHoy && !esSeleccionado ? "text-primario" : ""}`}>
-                  {fechaObj.getDate()}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      {!esLista && <CintaDiasAgenda dias={diasCinta} seleccionado={fechaSeleccionada} hoy={hoy} />}
 
       <div className="mb-4 flex items-center justify-between">
         <Link

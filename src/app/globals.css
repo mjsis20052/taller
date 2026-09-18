@@ -110,6 +110,15 @@ a.bg-primario:active {
   box-shadow: 0 3px 10px -4px color-mix(in srgb, var(--primario) 55%, transparent);
 }
 
+/* Tiras que se deslizan con el dedo, sin barra de scroll visible. */
+.sin-barra {
+  scrollbar-width: none;
+}
+
+.sin-barra::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);
