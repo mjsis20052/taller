@@ -485,13 +485,20 @@
 - Las migraciones de Prisma no van dentro de la imagen: se aplican
   con el SQL de prisma/migrations directo en el contenedor de la base
   (y se registran en _prisma_migrations).
-- Protección (2026-09-18): nginx pide usuario y clave (basic auth,
-  archivo /etc/nginx/.htpasswd-taller) para todo menos /portal, /_next,
-  /icons, /sw.js, /manifest.webmanifest y /offline. La clave actual es
-  PROVISORIA y débil (admin/admin): cambiarla cuanto antes con
-  `openssl passwd -apr1 NUEVA` en ese archivo. La app en sí sigue sin
-  login propio: si alguien saltea nginx (o se agrega otro acceso) el
-  panel queda abierto. Copia previa de la config: /root/taller.nginx.bak-antes-auth.
+- Login propio (2026-09-18): pantalla /login con cookie firmada
+  (HMAC, 30 días, httpOnly) y src/proxy.ts que cierra todo salvo
+  /portal, /login, /_next, /icons, /sw.js, /manifest.webmanifest y
+  /offline (GET → redirige a /login; otros métodos → 401). Cerrar
+  sesión está en Más. Freno de 8 intentos cada 15 min por IP. Se
+  configura con ADMIN_USER, ADMIN_PASSWORD y SESSION_SECRET en el
+  environment del contenedor (solo en el docker-compose del servidor,
+  nunca en el repo). Sin ADMIN_PASSWORD en desarrollo no se pide nada;
+  en producción sin configurar, el panel queda cerrado. Reemplazó el
+  basic auth de nginx. La clave actual es PROVISORIA y débil
+  (admin/admin): cambiar ADMIN_PASSWORD en ese compose y recrear el
+  contenedor. Límite conocido: el proxy filtra por ruta; una acción
+  de servidor se puede invocar por su ID desde una ruta pública, así
+  que conviene reforzar con chequeo de sesión dentro de las acciones.
 
 ## Pendientes de definición
 - Repositorio remoto: https://github.com/mjsis20052/taller.git

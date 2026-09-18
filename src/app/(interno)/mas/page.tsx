@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
+import { cerrarSesion } from "@/app/(publico)/login/actions";
 
 export const metadata: Metadata = { title: "Más" };
 
@@ -35,6 +36,15 @@ export default function PaginaMas() {
           </Link>
         ))}
       </div>
+
+      <form action={cerrarSesion} className="mt-6">
+        <button
+          type="submit"
+          className="w-full rounded-2xl border border-borde bg-superficie py-3.5 text-[14.5px] font-semibold text-peligro"
+        >
+          Cerrar sesión
+        </button>
+      </form>
     </section>
   );
 }
