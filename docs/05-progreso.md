@@ -435,6 +435,60 @@
   FormularioTurnoPublico de siempre). La página /portal/turno se dejó
   intacta como acceso directo por si alguien llega a esa URL.
 
+- (Horarios) Ahora cada día de la semana tiene sus horas EXACTAS
+  (ej: martes 10:00, 12:00 y 15:00) en /configuracion, como etiquetas
+  que se agregan y quitan; un día sin horas queda cerrado. El portal
+  ofrece solo esas (src/lib/horarios.ts + horarios-comunes.ts). La
+  config vieja (apertura/cierre/duración) se convierte sola al leerla.
+  La landing muestra los horarios reales en "Cuándo atendemos".
+- (Agenda) Sección "Turnos por confirmar" arriba de todo con los
+  pedidos de la web (no se repiten en la lista de abajo); la campanita
+  linkea a /agenda#por-confirmar.
+- (Teléfonos) Al cargar clientes (panel y portal) el +549 se agrega
+  solo: "2245506078" queda "+5492245506078" (normalizarTelefono en
+  src/lib/validaciones/telefono.ts). El wa.me de confirmación usa ese
+  número.
+- (OT) Rediseño de ítems. Los "trabajos" (TipoOTItem.MANO_OBRA en la
+  base, "Diagnóstico y trabajos" en pantalla) tienen falla encontrada +
+  solución propuesta + precio (OTItem.falla; descripcion = solución;
+  cantidad 1). Los repuestos se agregan con el botón "Agregar
+  repuesto": de la lista de stock (descuenta) o uno nuevo con precio
+  (libre, sin stock), con casilla "hay que pedirlo" y nota de cómo
+  pedirlo (OTItem.aPedir / notaPedido), y se puede marcar "ya pedido".
+- (OT) Sección "Importes y pagos": total, pagado, falta pagar (o saldo
+  a favor) y lista de pagos de ESA OT, con seña o pago parcial en
+  cualquier estado salvo cancelada (Cobro.concepto SENA|PAGO,
+  registrarPagoOT / eliminarPagoOT). Reemplaza el cobro que solo
+  aparecía al entregar. La cuenta corriente del cliente sigue igual:
+  una seña de una OT sin entregar queda como crédito a favor.
+  Migración: 20260918164835_ot_diagnostico_repuestos_pagos.
+- (Landing) Engranajes que giran, cinta de servicios, sección oscura
+  "Lo que hacemos" con ilustraciones vectoriales propias (no son fotos
+  del taller real; reemplazables) y horarios reales.
+
+## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
+- Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
+  sin swap), compartido con el diario (compromiso-main, pm2, mongo,
+  qdrant) y con otros proyectos (ej: mascotas).
+- Taller corre en Docker: /opt/taller/app/docker-compose.yml (servicios
+  db + app, límites de RAM 256m/512m, app publicada en el puerto 3010).
+  La clave de la base vive SOLO en ese archivo del servidor.
+- Público: https://taller.compromisodiario.com.ar (Cloudflare con
+  proxy activado + nginx: /etc/nginx/sites-available/taller, con
+  certbot). Solo abren los puertos 80/443: el proveedor bloquea el
+  resto (3010, 8080, 8085… no responden desde afuera).
+- NUNCA compilar (next build / docker build) en el VPS: el 2026-09-18
+  un build se comió la RAM y el servidor quedó colgado ~15 min (cayó
+  también el diario) hasta reiniciarlo desde el panel. Se compila en
+  la PC (Dockerfile multi-stage, output standalone), se sube con
+  `docker save | gzip` + `docker load`, y se recrea el contenedor.
+- Las migraciones de Prisma no van dentro de la imagen: se aplican
+  con el SQL de prisma/migrations directo en el contenedor de la base
+  (y se registran en _prisma_migrations).
+- RIESGO ABIERTO: el panel interno sigue SIN login y hoy es público en
+  ese dominio (solo /portal debería serlo). Falta proteger todo lo que
+  no sea /portal (contraseña en nginx o login en la app).
+
 ## Pendientes de definición
 - Repositorio remoto: https://github.com/mjsis20052/taller.git
   (rama master, todo el historial subido el 2026-09-15).

@@ -146,18 +146,55 @@ export async function cancelarOT(otId: string, formData: FormData) {
   revalidatePath("/");
 }
 
-export async function agregarItemOT(otId: string, formData: FormData) {
-  const tipo = String(formData.get("tipo") ?? "") as TipoOTItem;
-  const descripcion = String(formData.get("descripcion") ?? "").trim();
-  const cantidad = Number(formData.get("cantidad") ?? 0);
-  const precioUnitario = Number(formData.get("precioUnitario") ?? 0);
-  const repuestoId = String(formData.get("repuestoId") ?? "").trim() || null;
+// Un trabajo del diagnóstico: falla encontrada + solución propuesta + precio.
+export async function agregarTrabajoOT(otId: string, formData: FormData) {
+  const falla = String(formData.get("falla") ?? "").trim() || null;
+  const solucion = String(formData.get("solucion") ?? "").trim();
+  const precio = Number(formData.get("precio") ?? 0);
 
-  if (!descripcion || !cantidad || cantidad <= 0 || precioUnitario < 0) return;
+  if (!solucion || Number.isNaN(precio) || precio < 0) return;
 
   await prisma.$transaction(async (tx) => {
     await tx.oTItem.create({
-      data: { otId, tipo, descripcion, cantidad, precioUnitario, repuestoId },
+      data: {
+        otId,
+        tipo: TipoOTItem.MANO_OBRA,
+        descripcion: solucion,
+        falla,
+        cantidad: 1,
+        precioUnitario: precio,
+      },
+    });
+    await recalcularTotalesOT(otId, tx);
+  });
+
+  revalidatePath(`/ots/${otId}`);
+}
+
+// Un repuesto, del stock (descuenta) o nuevo/libre con su precio. Si hay que
+// pedirlo, queda marcado con la nota de cómo pedirlo.
+export async function agregarRepuestoOT(otId: string, formData: FormData) {
+  const repuestoId = String(formData.get("repuestoId") ?? "").trim() || null;
+  const descripcion = String(formData.get("descripcion") ?? "").trim();
+  const cantidad = Number(formData.get("cantidad") ?? 1);
+  const precioUnitario = Number(formData.get("precioUnitario") ?? 0);
+  const aPedir = formData.get("aPedir") === "on";
+  const notaPedido = String(formData.get("notaPedido") ?? "").trim() || null;
+
+  if (!descripcion || !cantidad || cantidad <= 0 || Number.isNaN(precioUnitario) || precioUnitario < 0) return;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.oTItem.create({
+      data: {
+        otId,
+        tipo: TipoOTItem.REPUESTO,
+        descripcion,
+        cantidad,
+        precioUnitario,
+        repuestoId,
+        aPedir,
+        notaPedido: aPedir || notaPedido ? notaPedido : null,
+      },
     });
     await recalcularTotalesOT(otId, tx);
 
@@ -174,6 +211,12 @@ export async function agregarItemOT(otId: string, formData: FormData) {
 
   revalidatePath(`/ots/${otId}`);
   revalidatePath("/stock");
+}
+
+export async function alternarRepuestoAPedir(itemId: string, otId: string) {
+  const item = await prisma.oTItem.findUniqueOrThrow({ where: { id: itemId } });
+  await prisma.oTItem.update({ where: { id: itemId }, data: { aPedir: !item.aPedir } });
+  revalidatePath(`/ots/${otId}`);
 }
 
 export async function eliminarItemOT(itemId: string, otId: string) {
@@ -211,6 +254,7 @@ export async function cargarPresupuesto(otId: string, formData: FormData) {
 
   const itemsSnapshot = items.map((item) => ({
     tipo: item.tipo,
+    falla: item.falla,
     descripcion: item.descripcion,
     cantidad: Number(item.cantidad),
     precioUnitario: Number(item.precioUnitario),

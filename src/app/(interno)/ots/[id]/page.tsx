@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { saldoCliente } from "@/lib/cuenta-corriente";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { PanelAccionesOT } from "@/components/panel-acciones-ot";
 import { GaleriaFotosOT } from "@/components/galeria-fotos-ot";
-import { FormularioItemOT } from "@/components/formulario-item-ot";
-import { eliminarItemOT } from "@/app/(interno)/ots/actions";
+import { FormularioTrabajoOT } from "@/components/formulario-trabajo-ot";
+import { BotonAgregarRepuesto } from "@/components/boton-agregar-repuesto";
+import { FormularioPagoOT } from "@/components/formulario-pago-ot";
+import { alternarRepuestoAPedir, eliminarItemOT } from "@/app/(interno)/ots/actions";
+import { eliminarPagoOT } from "@/app/(interno)/cobranzas/actions";
 
 const ETIQUETAS_ESTADO: Record<string, string> = {
   TURNO_AGENDADO: "Turno agendado",
@@ -54,6 +56,7 @@ export default async function PaginaDetalleOT({
       cliente: { select: { id: true, nombre: true, telefono: true } },
       vehiculo: { select: { id: true, patente: true, marca: true, modelo: true } },
       items: { orderBy: { createdAt: "asc" } },
+      cobros: { orderBy: { fecha: "asc" } },
       fotos: { orderBy: { fechaTomada: "desc" } },
       timeline: { orderBy: { fecha: "asc" } },
       presupuestos: { orderBy: { createdAt: "desc" }, take: 1 },
@@ -70,7 +73,10 @@ export default async function PaginaDetalleOT({
       : null;
 
   const puedeEditarItems = EDITABLE.has(ot.estado);
-  const saldo = await saldoCliente(ot.cliente.id);
+  const trabajos = ot.items.filter((i) => i.tipo === "MANO_OBRA");
+  const repuestos = ot.items.filter((i) => i.tipo === "REPUESTO");
+  const pagado = ot.cobros.reduce((acc, c) => acc + Number(c.monto), 0);
+  const saldoOT = Number(ot.total) - pagado;
   const mensajeWhatsapp = mensajeSegunEstado(ot.estado, ot.numero, ot.cliente.nombre);
 
   return (
@@ -116,60 +122,167 @@ export default async function PaginaDetalleOT({
         <h2 className="mb-3 text-[17px] font-semibold text-foreground">Acciones</h2>
         <PanelAccionesOT
           otId={ot.id}
-          clienteId={ot.cliente.id}
           estado={ot.estado}
           cantidadItems={ot.items.length}
           presupuestoPendiente={presupuestoPendiente}
           solicitudFacturacion={ot.solicitudFacturacion}
-          saldoCliente={saldo}
         />
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-[17px] font-semibold text-foreground">Ítems y totales</h2>
-        {ot.items.length > 0 && (
+        <h2 className="mb-1 text-[17px] font-semibold text-foreground">Diagnóstico y trabajos</h2>
+        <p className="mb-3 text-[12.5px] text-mutado">Cada falla encontrada con su solución y su precio.</p>
+        {trabajos.length > 0 && (
           <div className="mb-3 space-y-2">
-            {ot.items.map((item) => (
+            {trabajos.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-borde bg-superficie p-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1.5">
+                    {item.falla && (
+                      <p className="text-[13.5px] text-foreground">
+                        <span className="font-semibold text-peligro">Falla: </span>
+                        {item.falla}
+                      </p>
+                    )}
+                    <p className="text-[13.5px] text-foreground">
+                      <span className="font-semibold text-exito">Solución: </span>
+                      {item.descripcion}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-[14.5px] font-bold text-foreground">
+                      ${Number(item.precioUnitario).toLocaleString("es-AR")}
+                    </span>
+                    {puedeEditarItems && <BotonQuitarItem itemId={item.id} otId={ot.id} />}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {puedeEditarItems && <FormularioTrabajoOT otId={ot.id} />}
+        {!puedeEditarItems && trabajos.length === 0 && (
+          <p className="text-[13px] text-mutado">Sin trabajos cargados.</p>
+        )}
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-3 text-[17px] font-semibold text-foreground">Repuestos</h2>
+        {repuestos.length > 0 && (
+          <div className="mb-3 space-y-2">
+            {repuestos.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-borde bg-superficie p-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-medium text-foreground">{item.descripcion}</p>
+                    <p className="text-[12px] text-mutado">
+                      {Number(item.cantidad)} × ${Number(item.precioUnitario).toLocaleString("es-AR")}
+                      {item.repuestoId ? " · del stock" : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-[14.5px] font-bold text-foreground">
+                      ${(Number(item.cantidad) * Number(item.precioUnitario)).toLocaleString("es-AR")}
+                    </span>
+                    {puedeEditarItems && <BotonQuitarItem itemId={item.id} otId={ot.id} />}
+                  </div>
+                </div>
+
+                {(item.aPedir || item.notaPedido) && (
+                  <div
+                    className={`mt-2.5 rounded-xl px-3 py-2 ${
+                      item.aPedir ? "bg-alerta-suave" : "bg-exito-suave"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`text-[12px] font-bold uppercase ${item.aPedir ? "text-alerta" : "text-exito"}`}>
+                        {item.aPedir ? "Hay que pedirlo" : "Ya pedido"}
+                      </p>
+                      {puedeEditarItems && (
+                        <form action={alternarRepuestoAPedir.bind(null, item.id, ot.id)}>
+                          <button type="submit" className="text-[12px] font-semibold text-primario">
+                            {item.aPedir ? "Marcar como pedido" : "Volver a pedir"}
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                    {item.notaPedido && <p className="mt-0.5 text-[13px] text-foreground">{item.notaPedido}</p>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {puedeEditarItems && <BotonAgregarRepuesto otId={ot.id} />}
+        {!puedeEditarItems && repuestos.length === 0 && (
+          <p className="text-[13px] text-mutado">Sin repuestos cargados.</p>
+        )}
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-3 text-[17px] font-semibold text-foreground">Importes y pagos</h2>
+        <div className="space-y-1.5 rounded-2xl border border-borde bg-superficie p-4 text-[14px]">
+          <FilaDato etiqueta="Trabajos" valor={formatearPesos(ot.totalManoObra)} />
+          <FilaDato etiqueta="Repuestos" valor={formatearPesos(ot.totalRepuestos)} />
+          <div className="flex justify-between border-t border-borde pt-2 text-[15.5px] font-bold text-foreground">
+            <span>Total</span>
+            <span>{formatearPesos(ot.total)}</span>
+          </div>
+          <FilaDato etiqueta="Pagado" valor={formatearPesos(pagado)} />
+          <div
+            className={`flex justify-between rounded-lg px-2.5 py-2 text-[15px] font-bold ${
+              saldoOT > 0 ? "bg-alerta-suave text-alerta" : "bg-exito-suave text-exito"
+            }`}
+          >
+            <span>{saldoOT > 0 ? "Falta pagar" : saldoOT < 0 ? "Saldo a favor" : "Saldado"}</span>
+            <span>{saldoOT === 0 ? "$0" : formatearPesos(Math.abs(saldoOT))}</span>
+          </div>
+        </div>
+
+        {ot.cobros.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {ot.cobros.map((cobro) => (
               <div
-                key={item.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-borde bg-superficie px-3.5 py-2.5"
+                key={cobro.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-borde bg-superficie px-3.5 py-2.5"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-[13.5px] font-medium text-foreground">
-                    {item.descripcion}
+                  <p className="text-[13.5px] font-medium text-foreground">
+                    <span
+                      className={`mr-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                        cobro.concepto === "SENA" ? "bg-primario-suave text-primario" : "bg-exito-suave text-exito"
+                      }`}
+                    >
+                      {cobro.concepto === "SENA" ? "Seña" : "Pago"}
+                    </span>
+                    {cobro.metodo ?? "Sin especificar"}
                   </p>
                   <p className="text-[12px] text-mutado">
-                    {item.tipo === "REPUESTO" ? "Repuesto" : "Mano de obra"} · {Number(item.cantidad)} ×{" "}
-                    ${Number(item.precioUnitario).toLocaleString("es-AR")}
+                    {new Intl.DateTimeFormat("es-AR", {
+                      dateStyle: "medium",
+                      timeZone: "America/Argentina/Buenos_Aires",
+                    }).format(cobro.fecha)}
+                    {cobro.notas ? ` · ${cobro.notas}` : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-[13.5px] font-semibold text-foreground">
-                    ${(Number(item.cantidad) * Number(item.precioUnitario)).toLocaleString("es-AR")}
-                  </span>
-                  {puedeEditarItems && (
-                    <form action={eliminarItemOT.bind(null, item.id, ot.id)}>
-                      <button type="submit" className="text-[13px] text-peligro" aria-label="Eliminar ítem">
-                        ×
-                      </button>
-                    </form>
-                  )}
+                  <span className="text-[14.5px] font-bold text-foreground">{formatearPesos(cobro.monto)}</span>
+                  <form action={eliminarPagoOT.bind(null, cobro.id, ot.id)}>
+                    <button type="submit" className="text-[15px] text-peligro" aria-label="Eliminar pago">
+                      ×
+                    </button>
+                  </form>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {puedeEditarItems && <FormularioItemOT otId={ot.id} />}
-
-        <div className="mt-3 space-y-1 rounded-xl border border-borde bg-superficie p-4 text-[13.5px]">
-          <FilaDato etiqueta="Repuestos" valor={`$${Number(ot.totalRepuestos).toLocaleString("es-AR")}`} />
-          <FilaDato etiqueta="Mano de obra" valor={`$${Number(ot.totalManoObra).toLocaleString("es-AR")}`} />
-          <div className="flex justify-between border-t border-borde pt-1.5 text-[15px] font-bold text-foreground">
-            <span>Total</span>
-            <span>${Number(ot.total).toLocaleString("es-AR")}</span>
+        {ot.estado !== "CANCELADA" && (
+          <div className="mt-3">
+            <FormularioPagoOT otId={ot.id} saldo={Math.max(saldoOT, 0)} />
           </div>
-        </div>
+        )}
       </section>
 
       <section className="mb-8">
@@ -202,6 +315,20 @@ export default async function PaginaDetalleOT({
         </ol>
       </section>
     </section>
+  );
+}
+
+function formatearPesos(valor: number | { toString(): string }): string {
+  return `$${Number(valor).toLocaleString("es-AR")}`;
+}
+
+function BotonQuitarItem({ itemId, otId }: { itemId: string; otId: string }) {
+  return (
+    <form action={eliminarItemOT.bind(null, itemId, otId)}>
+      <button type="submit" className="text-[15px] text-peligro" aria-label="Quitar">
+        ×
+      </button>
+    </form>
   );
 }
 

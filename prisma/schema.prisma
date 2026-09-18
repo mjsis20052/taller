@@ -246,6 +246,11 @@ model OTItem {
   precioUnitario Decimal    @db.Decimal(12, 2)
   // Opcional: si el repuesto viene del inventario, descuenta stock.
   repuestoId     String?
+  // Trabajos: falla encontrada en el diagnóstico (descripcion = solución propuesta).
+  falla          String?
+  // Repuestos: si hay que pedirlo al proveedor y cómo.
+  aPedir         Boolean    @default(false)
+  notaPedido     String?
   createdAt      DateTime   @default(now())
 
   ot       OrdenTrabajo @relation(fields: [otId], references: [id])
@@ -354,6 +359,8 @@ model Cobro {
   fecha     DateTime @default(now())
   metodo    String?
   notas     String?
+  // SENA (adelanto por el trabajo) o PAGO (pago parcial o final).
+  concepto  String   @default("PAGO")
 
   cliente Cliente       @relation(fields: [clienteId], references: [id])
   ot      OrdenTrabajo? @relation(fields: [otId], references: [id])
