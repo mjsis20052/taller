@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { motion } from "framer-motion";
 import { iniciarSesion } from "@/app/(publico)/login/actions";
 
 const estiloInput =
@@ -23,13 +22,7 @@ export function FormularioLogin({ siguiente }: { siguiente: string }) {
   const [verClave, setVerClave] = useState(false);
 
   return (
-    <motion.form
-      action={ejecutarAccion}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="space-y-4"
-    >
+    <form action={ejecutarAccion} className="animar-entrada space-y-4">
       <input type="hidden" name="siguiente" value={siguiente} />
 
       <div>
@@ -88,6 +81,6 @@ export function FormularioLogin({ siguiente }: { siguiente: string }) {
       >
         {enviando ? "Ingresando…" : "Ingresar"}
       </button>
-    </motion.form>
+    </form>
   );
 }

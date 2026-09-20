@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { guardarConfigHorarios } from "@/lib/horarios";
-import { normalizarHoras } from "@/lib/horarios-comunes";
+import { guardarConfigHorarios, hoyEnArgentina } from "@/lib/horarios";
+import { esFechaValida, normalizarHoras } from "@/lib/horarios-comunes";
 
 export type ErroresConfigHorarios = { duracionMin?: string; ok?: boolean };
 
@@ -18,9 +18,26 @@ export async function actualizarConfigHorarios(
     horarios[dia] = normalizarHoras(formData.getAll(`horas-${dia}`).map(String));
   }
 
-  await guardarConfigHorarios({ duracionMin, horarios });
+  // Días especiales: llegan como JSON [{ fecha, horas }]; se descartan los ya pasados.
+  const especiales: Record<string, string[]> = {};
+  try {
+    const lista = JSON.parse(String(formData.get("especiales") ?? "[]"));
+    const hoy = hoyEnArgentina();
+    if (Array.isArray(lista)) {
+      for (const item of lista) {
+        const fecha = String(item?.fecha ?? "");
+        if (!esFechaValida(fecha) || fecha < hoy) continue;
+        especiales[fecha] = normalizarHoras(Array.isArray(item?.horas) ? item.horas.map(String) : []);
+      }
+    }
+  } catch {
+    // JSON inválido: se ignora y se guardan sin días especiales.
+  }
+
+  await guardarConfigHorarios({ duracionMin, horarios, especiales });
 
   revalidatePath("/configuracion");
+  revalidatePath("/agenda");
   revalidatePath("/portal");
   return { ok: true };
 }

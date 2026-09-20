@@ -57,7 +57,7 @@ export default async function PaginaOTs({
     <section>
       <EncabezadoPagina titulo="Órdenes de trabajo" descripcion="Listado por estado." />
 
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+      <div className="sin-barra -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
         {FILTROS.map((f) => (
           <Link
             key={f.valor}

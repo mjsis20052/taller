@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizarPatente } from "@/lib/validaciones/patente";
 import { normalizarTelefono } from "@/lib/validaciones/telefono";
 import { MARCADOR_PEDIDO_PORTAL } from "@/lib/turno-portal";
-import { obtenerConfigHorarios, horariosDelDia } from "@/lib/horarios";
+import { horasLibresDelDia, obtenerConfigHorarios } from "@/lib/horarios";
 import { revalidatePath } from "next/cache";
 
 // ---------------------------------------------------------------------------
@@ -86,48 +86,7 @@ export async function consultarPatentePublico(
 // el dueño configuró en /configuracion — sin los que ya están ocupados.
 export async function obtenerHorariosDisponiblesPublico(fecha: string): Promise<string[]> {
   if (!fecha) return [];
-
-  const diaSemana = new Date(`${fecha}T12:00:00`).getDay();
-  const config = await obtenerConfigHorarios();
-  const todos = horariosDelDia(config, diaSemana);
-  if (todos.length === 0) return [];
-
-  const inicio = new Date(`${fecha}T00:00:00`);
-  const fin = new Date(`${fecha}T23:59:59.999`);
-  const ocupados = await prisma.turno.findMany({
-    where: { fechaHora: { gte: inicio, lte: fin }, estado: "AGENDADO" },
-    select: { fechaHora: true },
-  });
-  const horasOcupadas = new Set(
-    ocupados.map((t) =>
-      new Intl.DateTimeFormat("sv-SE", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: "America/Argentina/Buenos_Aires",
-      }).format(t.fechaHora),
-    ),
-  );
-
-  const esHoy = fecha === new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
-  const ahoraMin = esHoy
-    ? Number(
-        new Intl.DateTimeFormat("es-AR", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-          timeZone: "America/Argentina/Buenos_Aires",
-        })
-          .format(new Date())
-          .replace(":", ""),
-      )
-    : -1;
-
-  return todos.filter((h) => {
-    if (horasOcupadas.has(h)) return false;
-    if (esHoy && Number(h.replace(":", "")) <= ahoraMin) return false;
-    return true;
-  });
+  return horasLibresDelDia(fecha);
 }
 
 export type ErroresTurnoPublico = Partial<
@@ -177,7 +136,7 @@ export async function solicitarTurnoPublico(
 
   if (Object.keys(errores).length > 0) return errores;
 
-  const fechaHora = new Date(`${fecha}T${hora}:00`);
+  const fechaHora = new Date(`${fecha}T${hora}:00-03:00`);
 
   await prisma.$transaction(async (tx) => {
     let cliente = await tx.cliente.findFirst({ where: { telefono } });

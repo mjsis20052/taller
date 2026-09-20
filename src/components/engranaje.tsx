@@ -1,7 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
-
 function trazadoEngranaje(dientes: number, radioExterno: number, radioInterno: number): string {
   const puntos: string[] = [];
   const paso = (Math.PI * 2) / dientes;
@@ -22,6 +18,7 @@ function trazadoEngranaje(dientes: number, radioExterno: number, radioInterno: n
 
 const TRAZADO = trazadoEngranaje(10, 48, 38);
 
+// Gira solo con CSS (sin librería de animaciones).
 export function Engranaje({
   className,
   segundos = 24,
@@ -32,16 +29,15 @@ export function Engranaje({
   sentido?: 1 | -1;
 }) {
   return (
-    <motion.svg
+    <svg
       viewBox="0 0 100 100"
       aria-hidden
-      className={className}
-      animate={{ rotate: 360 * sentido }}
-      transition={{ duration: segundos, repeat: Infinity, ease: "linear" }}
+      className={`girar ${sentido === -1 ? "girar-inverso" : ""} ${className ?? ""}`}
+      style={{ ["--dur" as string]: `${segundos}s` }}
     >
       <path d={TRAZADO} fill="currentColor" fillRule="evenodd" />
       <circle cx="50" cy="50" r="14" fill="var(--background)" />
       <circle cx="50" cy="50" r="6" fill="currentColor" />
-    </motion.svg>
+    </svg>
   );
 }

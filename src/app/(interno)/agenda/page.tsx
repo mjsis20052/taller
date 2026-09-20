@@ -5,6 +5,9 @@ import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { TarjetaTurno } from "@/components/tarjeta-turno";
 import { CintaDiasAgenda, type DiaCinta } from "@/components/cinta-dias-agenda";
+import { TurnosRapidos } from "@/components/turnos-rapidos";
+import { horasLibresDelDia, obtenerConfigHorarios } from "@/lib/horarios";
+import { horariosDeFecha } from "@/lib/horarios-comunes";
 import { EstadoTurno } from "@/generated/prisma/enums";
 import { MARCADOR_PEDIDO_PORTAL } from "@/lib/turno-portal";
 
@@ -25,8 +28,8 @@ function sumarDias(fechaISO: string, dias: number): string {
 }
 
 function limitesDelDia(fechaISO: string) {
-  const inicio = new Date(`${fechaISO}T00:00:00`);
-  const fin = new Date(`${fechaISO}T23:59:59.999`);
+  const inicio = new Date(`${fechaISO}T00:00:00-03:00`);
+  const fin = new Date(`${fechaISO}T23:59:59.999-03:00`);
   return { inicio, fin };
 }
 
@@ -43,6 +46,19 @@ export default async function PaginaAgenda({
   const hoy = hoyISO();
   const desde = fechaSeleccionada < hoy ? sumarDias(fechaSeleccionada, -14) : sumarDias(hoy, -14);
   const hasta = fechaSeleccionada > sumarDias(hoy, 90) ? sumarDias(fechaSeleccionada, 14) : sumarDias(hoy, 90);
+  const turnosDelRango = await prisma.turno.findMany({
+    where: {
+      estado: EstadoTurno.AGENDADO,
+      fechaHora: { gte: limitesDelDia(desde).inicio, lte: limitesDelDia(hasta).fin },
+    },
+    select: { fechaHora: true },
+  });
+  const turnosPorDia = new Map<string, number>();
+  for (const t of turnosDelRango) {
+    const dia = t.fechaHora.toLocaleDateString("en-CA", { timeZone: ZONA });
+    turnosPorDia.set(dia, (turnosPorDia.get(dia) ?? 0) + 1);
+  }
+
   const diasCinta: DiaCinta[] = [];
   for (let dia = desde; dia <= hasta; dia = sumarDias(dia, 1)) {
     const fechaObj = new Date(`${dia}T12:00:00`);
@@ -51,8 +67,13 @@ export default async function PaginaAgenda({
       diaSemana: DIAS_SEMANA[fechaObj.getDay()],
       numero: fechaObj.getDate(),
       mes: fechaObj.getDate() === 1 ? MESES[fechaObj.getMonth()] : null,
+      turnos: turnosPorDia.get(dia) ?? 0,
     });
   }
+
+  const config = esLista ? null : await obtenerConfigHorarios();
+  const horasDelDia = config ? horariosDeFecha(config, fechaSeleccionada) : [];
+  const libres = config && fechaSeleccionada >= hoy ? await horasLibresDelDia(fechaSeleccionada, config) : [];
 
   const incluir = {
     cliente: { select: { nombre: true, telefono: true } },
@@ -128,6 +149,21 @@ export default async function PaginaAgenda({
       </div>
 
       {!esLista && <CintaDiasAgenda dias={diasCinta} seleccionado={fechaSeleccionada} hoy={hoy} />}
+
+      {!esLista && config && fechaSeleccionada >= hoy && (
+        <TurnosRapidos
+          fecha={fechaSeleccionada}
+          etiquetaFecha={new Intl.DateTimeFormat("es-AR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            timeZone: ZONA,
+          }).format(new Date(`${fechaSeleccionada}T12:00:00`))}
+          libres={libres}
+          hayHorarios={horasDelDia.length > 0}
+          duracionMin={config.duracionMin}
+        />
+      )}
 
       <div className="mb-4 flex items-center justify-between">
         <Link

@@ -119,6 +119,35 @@ a.bg-primario:active {
   display: none;
 }
 
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animar-entrada {
+  animation: entrada 0.16s ease-out;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.girar {
+  animation: girar var(--dur, 24s) linear infinite;
+}
+
+.girar-inverso {
+  animation-direction: reverse;
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);
@@ -133,7 +162,9 @@ a.bg-primario:active {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cinta-marquee {
+  .cinta-marquee,
+  .girar,
+  .animar-entrada {
     animation: none;
   }
 }

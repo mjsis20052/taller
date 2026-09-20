@@ -2,19 +2,18 @@ import Link from "next/link";
 import { NavegacionInferior } from "@/components/navegacion-inferior";
 import { BotonVolver } from "@/components/boton-volver";
 import { TransicionPagina } from "@/components/transicion-pagina";
+import { Suspense } from "react";
 import { CampanaNotificaciones } from "@/components/campana-notificaciones";
-import { obtenerAlertas } from "@/lib/alertas";
+import { CampanaConAlertas } from "@/components/campana-con-alertas";
 
 // Todo el panel lee la base en cada visita: nunca se pre-genera en el build.
 export const dynamic = "force-dynamic";
 
-export default async function LayoutInterno({
+export default function LayoutInterno({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const alertas = await obtenerAlertas();
-
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="sticky top-0 z-40 border-b border-borde bg-superficie/90 backdrop-blur">
@@ -27,7 +26,9 @@ export default async function LayoutInterno({
             Taller
           </span>
           <div className="ml-auto flex items-center gap-1">
-            <CampanaNotificaciones alertas={alertas} />
+            <Suspense fallback={<CampanaNotificaciones alertas={[]} />}>
+              <CampanaConAlertas />
+            </Suspense>
             <Link
               href="/buscar"
               aria-label="Buscar por patente, nombre o teléfono"

@@ -466,6 +466,23 @@
   "Lo que hacemos" con ilustraciones vectoriales propias (no son fotos
   del taller real; reemplazables) y horarios reales.
 
+- (2026-09-20) Agenda: cinta de dias deslizable con burbuja de cantidad
+  de turnos por dia, "Dar un turno rapido" (horarios libres del dia +
+  "turno especial" con hora/duracion libres), dias especiales en
+  /configuracion (feriados o horarios distintos por fecha, tambien
+  visibles en la landing) y disponibilidad real: un horario deja de
+  ofrecerse en el portal apenas un turno lo pisa (src/lib/horarios.ts,
+  horasLibres). "Mas" ahora es una cuadricula de iconos de app; el
+  filtro de OTs se desliza sin barra.
+- (2026-09-20) Rendimiento: se saco la animacion de salida entre
+  pantallas (esperaba ~200 ms en cada cambio), engranajes/login pasan
+  a CSS (framer-motion queda solo en la landing), esqueleto de carga
+  instantaneo (loading.tsx), alertas de la campana sin bloquear el
+  encabezado y con consultas agrupadas en la base.
+- (2026-09-20) BUG de zona horaria: el contenedor corre en UTC y los
+  turnos se guardaban 3 h corridos. Ahora las horas se arman con
+  -03:00 y el compose del servidor define TZ=America/Argentina/Buenos_Aires.
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,

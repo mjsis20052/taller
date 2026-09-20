@@ -41,3 +41,17 @@ export async function listarDeudores() {
     .filter((c) => c.deuda > 0)
     .sort((a, b) => b.deuda - a.deuda);
 }
+
+// Solo la cantidad de deudores, con dos sumas agrupadas en la base (no trae todas las OT y cobros).
+export async function contarDeudores(): Promise<number> {
+  const [ots, cobros] = await Promise.all([
+    prisma.ordenTrabajo.groupBy({
+      by: ["clienteId"],
+      where: { estado: { in: ESTADOS_FACTURABLES }, cliente: { activo: true } },
+      _sum: { total: true },
+    }),
+    prisma.cobro.groupBy({ by: ["clienteId"], _sum: { monto: true } }),
+  ]);
+  const cobrado = new Map(cobros.map((c) => [c.clienteId, Number(c._sum.monto ?? 0)]));
+  return ots.filter((o) => Number(o._sum.total ?? 0) - (cobrado.get(o.clienteId) ?? 0) > 0).length;
+}

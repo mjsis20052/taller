@@ -12,7 +12,8 @@ export type ErroresFormularioTurno = Partial<
 
 function construirFechaHora(fecha: string, hora: string): Date | null {
   if (!fecha || !hora) return null;
-  const fechaHora = new Date(`${fecha}T${hora}:00`);
+  // Hora de Argentina (UTC-3, sin horario de verano), sin depender de la zona del servidor.
+  const fechaHora = new Date(`${fecha}T${hora}:00-03:00`);
   return Number.isNaN(fechaHora.getTime()) ? null : fechaHora;
 }
 
