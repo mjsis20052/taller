@@ -5,6 +5,8 @@ import { TransicionPagina } from "@/components/transicion-pagina";
 import { Suspense } from "react";
 import { CampanaNotificaciones } from "@/components/campana-notificaciones";
 import { CampanaConAlertas } from "@/components/campana-con-alertas";
+import { CuentaCorrienteConDatos } from "@/components/cuenta-corriente-con-datos";
+import { IconoCuentaCorriente } from "@/components/icono-cuenta-corriente";
 
 // Todo el panel lee la base en cada visita: nunca se pre-genera en el build.
 export const dynamic = "force-dynamic";
@@ -26,6 +28,9 @@ export default function LayoutInterno({
             Taller
           </span>
           <div className="ml-auto flex items-center gap-1">
+            <Suspense fallback={<IconoCuentaCorriente deudores={[]} />}>
+              <CuentaCorrienteConDatos />
+            </Suspense>
             <Suspense fallback={<CampanaNotificaciones alertas={[]} />}>
               <CampanaConAlertas />
             </Suspense>

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_SESION, authConfigurada, tokenValido } from "@/lib/sesion";
 
 // Públicas: el portal de clientes y lo mínimo que necesita para cargar/instalarse.
-const PUBLICAS = /^\/(portal|login|_next|icons|sw\.js|manifest\.webmanifest|favicon\.ico|offline|api\/version)(\/|$|\.)/;
+const PUBLICAS = /^\/(portal|login|_next|icons|sw\.js|manifest\.webmanifest|favicon\.ico|offline|api\/version|informe)(\/|$|\.)/;
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

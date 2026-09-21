@@ -8,7 +8,10 @@ import { GaleriaFotosOT } from "@/components/galeria-fotos-ot";
 import { FormularioTrabajoOT } from "@/components/formulario-trabajo-ot";
 import { BotonAgregarRepuesto } from "@/components/boton-agregar-repuesto";
 import { FormularioPagoOT } from "@/components/formulario-pago-ot";
-import { alternarRepuestoAPedir, eliminarItemOT } from "@/app/(interno)/ots/actions";
+import { cambiarEstadoPedido, eliminarItemOT } from "@/app/(interno)/ots/actions";
+import { BotonCompartirInforme } from "@/components/boton-compartir-informe";
+import { NovedadRapida } from "@/components/novedad-rapida";
+import { ETIQUETA_PEDIDO, resumenPedidos, type EstadoPedido } from "@/lib/pedidos";
 import { eliminarPagoOT } from "@/app/(interno)/cobranzas/actions";
 import { BotonQuitarConfirmando } from "@/components/boton-quitar-confirmando";
 import { saldoCliente } from "@/lib/cuenta-corriente";
@@ -79,6 +82,8 @@ export default async function PaginaDetalleOT({
   const repuestos = ot.items.filter((i) => i.tipo === "REPUESTO");
   const pagado = ot.cobros.reduce((acc, c) => acc + (c.concepto === "DEVOLUCION" ? -Number(c.monto) : Number(c.monto)), 0);
   const saldoOT = Number(ot.total) - pagado;
+  const estadoRepuestos = resumenPedidos(ot.items);
+  const repuestosPorLlegar = repuestos.filter((r) => r.estadoPedido === "A_PEDIR" || r.estadoPedido === "PEDIDO").length;
   const saldoDelCliente = await saldoCliente(ot.cliente.id);
   const mensajeWhatsapp = mensajeSegunEstado(ot.estado, ot.numero, ot.cliente.nombre);
 
@@ -121,6 +126,22 @@ export default async function PaginaDetalleOT({
         </a>
       )}
 
+      {estadoRepuestos === "ESPERANDO" && (
+        <div className="mb-5 rounded-2xl border border-alerta/30 bg-alerta-suave px-4 py-3">
+          <p className="text-[13.5px] font-bold text-alerta">Vehículo esperando repuesto</p>
+          <p className="text-[12.5px] text-mutado">
+            {repuestosPorLlegar} repuesto{repuestosPorLlegar === 1 ? "" : "s"} por pedir o esperar que llegue
+            {repuestosPorLlegar === 1 ? "" : "n"}. El cliente lo ve en su informe.
+          </p>
+        </div>
+      )}
+      {estadoRepuestos === "RECIBIDOS" && (
+        <div className="mb-5 rounded-2xl border border-exito/30 bg-exito-suave px-4 py-3">
+          <p className="text-[13.5px] font-bold text-exito">Repuestos recepcionados ✓</p>
+          <p className="text-[12.5px] text-mutado">Ya llegaron todos: se puede seguir con el trabajo.</p>
+        </div>
+      )}
+
       <section className="mb-8">
         <h2 className="mb-3 text-[17px] font-semibold text-foreground">Acciones</h2>
         <PanelAccionesOT
@@ -131,6 +152,32 @@ export default async function PaginaDetalleOT({
           solicitudFacturacion={ot.solicitudFacturacion}
         />
       </section>
+
+      {ot.estado !== "CANCELADA" && (
+        <section className="mb-8 rounded-2xl border border-borde bg-superficie p-4">
+          <p className="text-[14.5px] font-bold text-foreground">Informe para el cliente</p>
+          <p className="mb-3 mt-0.5 text-[12.5px] text-mutado">
+            Le llega un link con lo que se hizo y cómo avanza; se actualiza solo.
+          </p>
+          <BotonCompartirInforme
+            ruta={`/informe/${ot.tokenInforme}`}
+            telefono={ot.cliente.telefono}
+            texto={`Hola ${ot.cliente.nombre.split(" ")[0]}! Te comparto el informe de tu ${ot.vehiculo.marca} ${ot.vehiculo.modelo} (${ot.numero}). Ahí ves cómo avanza:`}
+          />
+        </section>
+      )}
+
+      {ot.estado !== "CANCELADA" && ot.estado !== "ENTREGADO" && (
+        <section className="mb-8">
+          <NovedadRapida
+            otId={ot.id}
+            telefono={ot.cliente.telefono}
+            nombreCliente={ot.cliente.nombre}
+            vehiculo={`${ot.vehiculo.marca} ${ot.vehiculo.modelo}`}
+            ruta={`/informe/${ot.tokenInforme}`}
+          />
+        </section>
+      )}
 
       <section className="mb-8">
         <h2 className="mb-1 text-[17px] font-semibold text-foreground">Diagnóstico y trabajos</h2>
@@ -205,26 +252,53 @@ export default async function PaginaDetalleOT({
                   </div>
                 </div>
 
-                {(item.aPedir || item.notaPedido) && (
+                {item.estadoPedido !== "NO" && (
                   <div
-                    className={`mt-2.5 rounded-xl px-3 py-2 ${
-                      item.aPedir ? "bg-alerta-suave" : "bg-exito-suave"
+                    className={`mt-2.5 rounded-xl px-3 py-2.5 ${
+                      item.estadoPedido === "RECIBIDO"
+                        ? "bg-exito-suave"
+                        : item.estadoPedido === "PEDIDO"
+                          ? "bg-primario-suave"
+                          : "bg-alerta-suave"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={`text-[12px] font-bold uppercase ${item.aPedir ? "text-alerta" : "text-exito"}`}>
-                        {item.aPedir ? "Hay que pedirlo" : "Ya pedido"}
-                      </p>
-                      {puedeEditarItems && (
-                        <form action={alternarRepuestoAPedir.bind(null, item.id, ot.id)}>
-                          <button type="submit" className="text-[12px] font-semibold text-primario">
-                            {item.aPedir ? "Marcar como pedido" : "Volver a pedir"}
-                          </button>
-                        </form>
-                      )}
-                    </div>
+                    <p
+                      className={`text-[12px] font-bold uppercase ${
+                        item.estadoPedido === "RECIBIDO"
+                          ? "text-exito"
+                          : item.estadoPedido === "PEDIDO"
+                            ? "text-primario"
+                            : "text-alerta"
+                      }`}
+                    >
+                      {ETIQUETA_PEDIDO[item.estadoPedido as EstadoPedido]}
+                      {item.estadoPedido === "RECIBIDO" ? " ✓" : ""}
+                    </p>
                     {item.notaPedido && <p className="mt-0.5 text-[13px] text-foreground">{item.notaPedido}</p>}
+                    {puedeEditarItems && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {item.estadoPedido === "A_PEDIR" && (
+                          <BotonPedido itemId={item.id} otId={ot.id} estado="PEDIDO" texto="Ya lo pedí" principal />
+                        )}
+                        {item.estadoPedido === "PEDIDO" && (
+                          <>
+                            <BotonPedido itemId={item.id} otId={ot.id} estado="RECIBIDO" texto="Llegó: recepcionar" principal />
+                            <BotonPedido itemId={item.id} otId={ot.id} estado="A_PEDIR" texto="Todavía hay que pedirlo" />
+                          </>
+                        )}
+                        {item.estadoPedido === "RECIBIDO" && (
+                          <BotonPedido itemId={item.id} otId={ot.id} estado="PEDIDO" texto="Deshacer" />
+                        )}
+                      </div>
+                    )}
                   </div>
+                )}
+                {item.estadoPedido === "NO" && puedeEditarItems && (
+                  <form action={cambiarEstadoPedido.bind(null, item.id, ot.id, "A_PEDIR")} className="mt-2">
+                    <button type="submit" className="text-[12.5px] font-semibold text-primario">
+                      Marcar: hay que pedirlo
+                    </button>
+                  </form>
                 )}
               </div>
             ))}
@@ -355,6 +429,33 @@ export default async function PaginaDetalleOT({
 
 function formatearPesos(valor: number | { toString(): string }): string {
   return `$${Number(valor).toLocaleString("es-AR")}`;
+}
+
+function BotonPedido({
+  itemId,
+  otId,
+  estado,
+  texto,
+  principal = false,
+}: {
+  itemId: string;
+  otId: string;
+  estado: EstadoPedido;
+  texto: string;
+  principal?: boolean;
+}) {
+  return (
+    <form action={cambiarEstadoPedido.bind(null, itemId, otId, estado)}>
+      <button
+        type="submit"
+        className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold ${
+          principal ? "bg-primario text-white" : "border border-borde bg-superficie text-foreground"
+        }`}
+      >
+        {texto}
+      </button>
+    </form>
+  );
 }
 
 function BotonQuitarItem({

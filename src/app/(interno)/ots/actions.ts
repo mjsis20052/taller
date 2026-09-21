@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { recalcularTotalesOT, siguienteNumeroOT } from "@/lib/ordenes-trabajo";
 import { normalizarPatente } from "@/lib/validaciones/patente";
 import { normalizarTelefono } from "@/lib/validaciones/telefono";
+import { ESTADOS_PEDIDO, type EstadoPedido } from "@/lib/pedidos";
 import { storageAdapter } from "@/lib/storage/local-adapter";
 import {
   EntidadFoto,
@@ -246,6 +247,7 @@ export async function agregarRepuestoOT(otId: string, formData: FormData) {
         precioUnitario,
         repuestoId,
         aPedir,
+        estadoPedido: aPedir ? "A_PEDIR" : "NO",
         notaPedido: aPedir || notaPedido ? notaPedido : null,
       },
     });
@@ -266,10 +268,41 @@ export async function agregarRepuestoOT(otId: string, formData: FormData) {
   revalidatePath("/stock");
 }
 
-export async function alternarRepuestoAPedir(itemId: string, otId: string) {
-  const item = await prisma.oTItem.findUniqueOrThrow({ where: { id: itemId } });
-  await prisma.oTItem.update({ where: { id: itemId }, data: { aPedir: !item.aPedir } });
+// Novedad de la reparación (una línea): queda en el historial de la OT y en el informe del cliente.
+export async function publicarNovedadOT(otId: string, texto: string) {
+  const nota = texto.trim().slice(0, 200);
+  if (!nota) return;
+
+  const ot = await prisma.ordenTrabajo.findUniqueOrThrow({ where: { id: otId }, select: { estado: true } });
+  await prisma.timelineEvento.create({ data: { otId, estado: ot.estado, nota } });
+
   revalidatePath(`/ots/${otId}`);
+}
+
+// Mueve un repuesto por su ciclo: hay que pedirlo -> pedido -> recepcionado (llegó).
+// Pedido y recepcionado quedan en las novedades de la OT (también las ve el cliente en su informe).
+export async function cambiarEstadoPedido(itemId: string, otId: string, estado: EstadoPedido) {
+  if (!ESTADOS_PEDIDO.includes(estado)) return;
+
+  const item = await prisma.oTItem.update({
+    where: { id: itemId },
+    data: { estadoPedido: estado, aPedir: estado === "A_PEDIR" },
+    include: { ot: { select: { estado: true } } },
+  });
+
+  if (estado === "PEDIDO" || estado === "RECIBIDO") {
+    await prisma.timelineEvento.create({
+      data: {
+        otId,
+        estado: item.ot.estado,
+        nota: estado === "RECIBIDO" ? `Llegó el repuesto: ${item.descripcion}` : `Repuesto pedido: ${item.descripcion}`,
+      },
+    });
+  }
+
+  revalidatePath(`/ots/${otId}`);
+  revalidatePath("/ots");
+  revalidatePath("/");
 }
 
 export async function eliminarItemOT(itemId: string, otId: string) {

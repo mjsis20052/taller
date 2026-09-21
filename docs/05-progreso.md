@@ -515,6 +515,28 @@
   estado: React 19 reinicia los campos sin estado cuando el envio falla,
   por eso antes se borraban marca/modelo.
 
+- (2026-09-21) Informes para el cliente. Cada OT y cada cliente tienen
+  un enlace secreto (tokenInforme, 32 hex, generado por la base): la
+  pagina publica /informe/<token> muestra el avance de la reparacion
+  (pasos, que se encontro y que se hizo, repuestos con su estado,
+  importes y novedades) y se actualiza sola cada 30 s;
+  /informe/cliente/<token> es el historial de todos sus trabajos. Solo
+  lleva lo del propio cliente (nunca telefono ni documentos) y tiene
+  noindex. Se comparte por WhatsApp desde la OT, desde Inicio (icono en
+  cada OT activa) y desde Mas > Informes (por cliente: una orden o todo).
+  Quien tenga el link ve el informe: no reenviarlo a terceros.
+- (2026-09-21) Repuestos: estado del pedido A_PEDIR -> PEDIDO -> RECIBIDO
+  (OTItem.estadoPedido). Al pedir o recepcionar queda una novedad en la
+  OT. La OT muestra "Vehiculo esperando repuesto" / "Repuestos
+  recepcionados", igual en Inicio y en la lista, y la campanita avisa los
+  vehiculos que esperan repuesto. "Novedad rapida" en la OT: chips de un
+  toque que publican una linea en el informe y se avisan por WhatsApp.
+- (2026-09-21) Icono de cuenta corriente en el encabezado (billetera con
+  el numero de clientes que deben): abre el detalle de cada deudor (OT,
+  trabajos y repuestos, lo que ya pago) y desde ahi se cobra, se devuelve
+  o se recuerda por WhatsApp (listarDeudoresConDetalle).
+  Migracion: 20260921230000_informes_y_estado_pedido.
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,

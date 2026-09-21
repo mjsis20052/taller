@@ -3,9 +3,21 @@ import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { TarjetaTurno } from "@/components/tarjeta-turno";
+import { BotonCompartirInforme } from "@/components/boton-compartir-informe";
+import { resumenPedidos } from "@/lib/pedidos";
 import { EstadoOT, EstadoTurno } from "@/generated/prisma/enums";
 
 const ZONA = "America/Argentina/Buenos_Aires";
+
+const ETIQUETAS_ESTADO: Record<string, string> = {
+  INGRESADO: "Ingresado",
+  EN_DIAGNOSTICO: "En diagnóstico",
+  PRESUPUESTADO: "Presupuestado",
+  APROBADO: "Aprobado",
+  EN_EJECUCION: "En ejecución",
+  TERMINADO: "Terminado",
+  FACTURADO: "Facturado",
+};
 
 function hoyISO(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: ZONA });
@@ -13,8 +25,8 @@ function hoyISO(): string {
 
 export default async function Inicio() {
   const hoy = hoyISO();
-  const inicio = new Date(`${hoy}T00:00:00`);
-  const fin = new Date(`${hoy}T23:59:59.999`);
+  const inicio = new Date(`${hoy}T00:00:00-03:00`);
+  const fin = new Date(`${hoy}T23:59:59.999-03:00`);
 
   const [turnosHoy, otsActivas] = await Promise.all([
     prisma.turno.findMany({
@@ -27,7 +39,11 @@ export default async function Inicio() {
     }),
     prisma.ordenTrabajo.findMany({
       where: { estado: { notIn: [EstadoOT.ENTREGADO, EstadoOT.CANCELADA] } },
-      include: { cliente: { select: { nombre: true } }, vehiculo: { select: { patente: true } } },
+      include: {
+        cliente: { select: { nombre: true, telefono: true } },
+        vehiculo: { select: { patente: true, marca: true, modelo: true } },
+        items: { select: { tipo: true, estadoPedido: true } },
+      },
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
@@ -85,23 +101,40 @@ export default async function Inicio() {
           />
         ) : (
           <div className="space-y-2.5">
-            {otsActivas.map((ot) => (
-              <Link
-                key={ot.id}
-                href={`/ots/${ot.id}`}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-borde bg-superficie px-4 py-3.5"
-              >
-                <div>
-                  <p className="text-[15px] font-semibold text-foreground">{ot.numero}</p>
-                  <p className="text-[13px] text-mutado">
-                    {ot.cliente.nombre} · {ot.vehiculo.patente}
-                  </p>
+            {otsActivas.map((ot) => {
+              const espera = resumenPedidos(ot.items) === "ESPERANDO";
+              return (
+                <div
+                  key={ot.id}
+                  className="flex items-center gap-2 rounded-2xl border border-borde bg-superficie py-2.5 pl-4 pr-3"
+                >
+                  <Link href={`/ots/${ot.id}`} className="flex min-w-0 flex-1 items-center justify-between gap-3 py-1">
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-semibold text-foreground">{ot.numero}</p>
+                      <p className="truncate text-[13px] text-mutado">
+                        {ot.cliente.nombre} · {ot.vehiculo.patente}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="rounded-full bg-primario-suave px-2.5 py-1 text-[11px] font-semibold text-primario">
+                        {ETIQUETAS_ESTADO[ot.estado] ?? ot.estado}
+                      </span>
+                      {espera && (
+                        <span className="rounded-full bg-alerta-suave px-2.5 py-0.5 text-[10.5px] font-bold text-alerta">
+                          Esperando repuesto
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                  <BotonCompartirInforme
+                    variante="icono"
+                    ruta={`/informe/${ot.tokenInforme}`}
+                    telefono={ot.cliente.telefono}
+                    texto={`Hola ${ot.cliente.nombre.split(" ")[0]}! Te comparto el informe de tu ${ot.vehiculo.marca} ${ot.vehiculo.modelo} (${ot.numero}). Ahí ves cómo avanza:`}
+                  />
                 </div>
-                <span className="rounded-full bg-primario-suave px-2.5 py-1 text-[11px] font-semibold text-primario">
-                  {ot.estado}
-                </span>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

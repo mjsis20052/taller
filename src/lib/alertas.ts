@@ -6,7 +6,7 @@ import { EstadoOT, EstadoTurno } from "@/generated/prisma/enums";
 export type Alerta = { texto: string; href: string };
 
 export async function obtenerAlertas(): Promise<Alerta[]> {
-  const [repuestosBajosFila, cantidadDeudores, presupuestosSinRespuesta, facturacionPendiente, pedidosWeb] =
+  const [repuestosBajosFila, cantidadDeudores, presupuestosSinRespuesta, facturacionPendiente, pedidosWeb, otsEsperando] =
     await Promise.all([
       prisma.$queryRaw<{ c: number }[]>`SELECT COUNT(*)::int AS c FROM "Repuesto" WHERE activo = true AND stock <= "stockMinimo"`,
       contarDeudores(),
@@ -14,6 +14,12 @@ export async function obtenerAlertas(): Promise<Alerta[]> {
       prisma.solicitudFacturacion.count({ where: { estado: { in: ["PENDIENTE", "ENVIADA"] } } }),
       prisma.turno.count({
         where: { estado: EstadoTurno.AGENDADO, motivo: { startsWith: MARCADOR_PEDIDO_PORTAL } },
+      }),
+      prisma.ordenTrabajo.count({
+        where: {
+          estado: { notIn: [EstadoOT.ENTREGADO, EstadoOT.CANCELADA] },
+          items: { some: { tipo: "REPUESTO", estadoPedido: { in: ["A_PEDIR", "PEDIDO"] } } },
+        },
       }),
     ]);
 
@@ -23,6 +29,10 @@ export async function obtenerAlertas(): Promise<Alerta[]> {
     pedidosWeb > 0 && {
       texto: `${pedidosWeb} pedido${pedidosWeb === 1 ? "" : "s"} de turno desde la web sin confirmar`,
       href: "/agenda#por-confirmar",
+    },
+    otsEsperando > 0 && {
+      texto: `${otsEsperando} vehículo${otsEsperando === 1 ? "" : "s"} esperando repuesto`,
+      href: "/ots?estado=activas",
     },
     repuestosBajos > 0 && {
       texto: `${repuestosBajos} repuesto${repuestosBajos === 1 ? "" : "s"} con stock bajo`,

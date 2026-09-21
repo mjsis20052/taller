@@ -111,6 +111,8 @@ model Cliente {
   domicilio       String?
   notas           String?
   activo          Boolean         @default(true)
+  // Enlace secreto para compartir con el cliente todo su historial (/informe/cliente/<token>).
+  tokenInforme    String          @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -204,6 +206,8 @@ model OrdenTrabajo {
   totalManoObra     Decimal           @default(0) @db.Decimal(12, 2)
   total             Decimal           @default(0) @db.Decimal(12, 2)
   cerradaAt         DateTime?
+  // Enlace secreto para compartir el informe de esta OT con el cliente (/informe/<token>).
+  tokenInforme      String            @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
@@ -250,6 +254,8 @@ model OTItem {
   falla          String?
   // Repuestos: si hay que pedirlo al proveedor y cómo.
   aPedir         Boolean    @default(false)
+  // NO | A_PEDIR | PEDIDO | RECIBIDO (repuestos: se pide y después se recepciona al llegar).
+  estadoPedido   String     @default("NO")
   notaPedido     String?
   createdAt      DateTime   @default(now())
 

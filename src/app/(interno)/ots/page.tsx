@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { EstadoVacio } from "@/components/estado-vacio";
+import { resumenPedidos } from "@/lib/pedidos";
 import { ListaAnimada, ItemAnimado } from "@/components/lista-animada";
 import { EstadoOT } from "@/generated/prisma/enums";
 
@@ -48,6 +49,7 @@ export default async function PaginaOTs({
     include: {
       cliente: { select: { nombre: true } },
       vehiculo: { select: { patente: true, marca: true, modelo: true } },
+      items: { select: { tipo: true, estadoPedido: true } },
     },
     orderBy: { createdAt: "desc" },
     take: 50,
@@ -97,9 +99,21 @@ export default async function PaginaOTs({
                     {ot.cliente.nombre} · {ot.vehiculo.patente}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full bg-primario-suave px-2.5 py-1 text-[11px] font-semibold text-primario">
-                  {ETIQUETAS_ESTADO[ot.estado]}
-                </span>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="rounded-full bg-primario-suave px-2.5 py-1 text-[11px] font-semibold text-primario">
+                    {ETIQUETAS_ESTADO[ot.estado]}
+                  </span>
+                  {resumenPedidos(ot.items) === "ESPERANDO" && (
+                    <span className="rounded-full bg-alerta-suave px-2.5 py-0.5 text-[10.5px] font-bold text-alerta">
+                      Esperando repuesto
+                    </span>
+                  )}
+                  {resumenPedidos(ot.items) === "RECIBIDOS" && ot.estado !== "ENTREGADO" && (
+                    <span className="rounded-full bg-exito-suave px-2.5 py-0.5 text-[10.5px] font-bold text-exito">
+                      Repuestos ✓
+                    </span>
+                  )}
+                </div>
               </Link>
             </ItemAnimado>
           ))}

@@ -216,3 +216,87 @@ export async function resumenDeuda(): Promise<{ cantidad: number; total: number 
 export async function contarDeudores(): Promise<number> {
   return (await resumenDeuda()).cantidad;
 }
+
+export type DeudorDetalle = {
+  id: string;
+  nombre: string;
+  telefono: string;
+  saldo: number;
+  pagado: number;
+  ots: {
+    id: string;
+    numero: string;
+    estado: string;
+    vehiculo: string;
+    total: number;
+    saldo: number;
+    items: { id: string; descripcion: string; tipo: string; cantidad: number; subtotal: number }[];
+  }[];
+};
+
+// Clientes que deben, con todo lo que se les cargó (trabajos y repuestos por OT) y sus datos.
+export async function listarDeudoresConDetalle(): Promise<DeudorDetalle[]> {
+  const [ots, cobros] = await Promise.all([
+    prisma.ordenTrabajo.findMany({
+      where: { estado: { notIn: ESTADOS_FUERA }, cliente: { activo: true } },
+      select: {
+        id: true,
+        numero: true,
+        estado: true,
+        createdAt: true,
+        total: true,
+        clienteId: true,
+        cliente: { select: { nombre: true, telefono: true } },
+        vehiculo: { select: { patente: true, marca: true, modelo: true } },
+        cobros: { select: { monto: true, concepto: true } },
+        items: {
+          select: { id: true, descripcion: true, tipo: true, cantidad: true, precioUnitario: true },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.cobro.groupBy({ by: ["clienteId", "concepto"], _sum: { monto: true } }),
+  ]);
+
+  const cobradoPorCliente = new Map<string, number>();
+  for (const c of cobros) {
+    cobradoPorCliente.set(
+      c.clienteId,
+      (cobradoPorCliente.get(c.clienteId) ?? 0) + montoFirmado({ monto: Number(c._sum.monto ?? 0), concepto: c.concepto }),
+    );
+  }
+
+  const porCliente = new Map<string, DeudorDetalle>();
+  for (const ot of ots) {
+    const cuenta = armarOT(ot);
+    const deudor: DeudorDetalle = porCliente.get(ot.clienteId) ?? {
+      id: ot.clienteId,
+      nombre: ot.cliente.nombre,
+      telefono: ot.cliente.telefono,
+      saldo: 0,
+      pagado: cobradoPorCliente.get(ot.clienteId) ?? 0,
+      ots: [],
+    };
+    deudor.saldo += cuenta.total;
+    deudor.ots.push({
+      id: ot.id,
+      numero: ot.numero,
+      estado: ot.estado,
+      vehiculo: `${ot.vehiculo.marca} ${ot.vehiculo.modelo} · ${ot.vehiculo.patente}`,
+      total: cuenta.total,
+      saldo: cuenta.saldo,
+      items: ot.items.map((i) => ({
+        id: i.id,
+        descripcion: i.descripcion,
+        tipo: i.tipo,
+        cantidad: Number(i.cantidad),
+        subtotal: Number(i.cantidad) * Number(i.precioUnitario),
+      })),
+    });
+    porCliente.set(ot.clienteId, deudor);
+  }
+
+  for (const d of porCliente.values()) d.saldo -= d.pagado;
+  return [...porCliente.values()].filter((d) => d.saldo > 0).sort((a, b) => b.saldo - a.saldo);
+}
