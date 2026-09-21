@@ -5,7 +5,7 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import { FormularioCobroCliente } from "@/components/formulario-cobro-cliente";
 import { listarCuentas } from "@/lib/cuenta-corriente";
 import { pesos } from "@/lib/formato";
-import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { EnlaceWhatsAppCliente } from "@/components/whatsapp-cliente";
 
 export const metadata: Metadata = { title: "Cobranzas" };
 
@@ -81,14 +81,15 @@ export default async function PaginaCobranzas() {
                   </div>
 
                   <div className="flex gap-2">
-                    <a
-                      href={enlaceWhatsApp(d.telefono, texto)}
-                      target="_blank"
-                      rel="noreferrer"
+                    <EnlaceWhatsAppCliente
+                      clienteId={d.id}
+                      nombre={d.nombre}
+                      telefono={d.telefono}
+                      mensaje={texto}
                       className="flex-1 rounded-xl bg-exito-suave py-2.5 text-center text-[13px] font-semibold text-exito"
                     >
                       Recordar por WhatsApp
-                    </a>
+                    </EnlaceWhatsAppCliente>
                     <Link
                       href={`/clientes/${d.id}#cuenta`}
                       className="rounded-xl border border-borde px-4 py-2.5 text-[13px] font-semibold text-foreground"

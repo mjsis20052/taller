@@ -110,3 +110,18 @@ export async function cambiarActivoCliente(id: string, activo: boolean) {
   revalidatePath("/clientes");
   revalidatePath(`/clientes/${id}`);
 }
+
+// Guarda el teléfono cuando faltaba (lo pide el modal de WhatsApp).
+export async function guardarTelefonoCliente(
+  clienteId: string,
+  telefonoTexto: string,
+): Promise<{ ok: boolean; telefono?: string; error?: string }> {
+  const telefono = normalizarTelefono(telefonoTexto);
+  if (!validarTelefono(telefono)) {
+    return { ok: false, error: "Teléfono inválido. Cargalo con el código de área, ej: 2245506078." };
+  }
+  await prisma.cliente.update({ where: { id: clienteId }, data: { telefono } });
+  revalidatePath("/clientes");
+  revalidatePath(`/clientes/${clienteId}`);
+  return { ok: true, telefono };
+}

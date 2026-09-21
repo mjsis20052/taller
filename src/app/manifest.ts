@@ -4,8 +4,8 @@ const TAMANOS_ANY = [72, 96, 128, 144, 152, 180, 192, 384, 512];
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Taller — Gestión del taller mecánico",
-    short_name: "Taller",
+    name: "Car-Mec — Gestión del taller",
+    short_name: "Car-Mec",
     description:
       "Gestión integral del taller mecánico: turnos, órdenes de trabajo, clientes y vehículos.",
     id: "/",
@@ -16,18 +16,18 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     lang: "es-AR",
     dir: "ltr",
-    background_color: "#f4f5f9",
+    background_color: "#6366f1",
     theme_color: "#6366f1",
     categories: ["business", "productivity"],
     icons: [
       ...TAMANOS_ANY.map((tamano) => ({
-        src: `/icons/icon-${tamano}.png?v=2`,
+        src: `/icons/icon-${tamano}.png?v=3`,
         sizes: `${tamano}x${tamano}`,
         type: "image/png" as const,
         purpose: "any" as const,
       })),
       {
-        src: "/icons/icon-512-maskable.png?v=2",
+        src: "/icons/icon-512-maskable.png?v=3",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

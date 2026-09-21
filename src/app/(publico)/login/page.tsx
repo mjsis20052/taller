@@ -28,8 +28,8 @@ export default async function PaginaLogin({
 
       <div className="relative w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primario text-3xl shadow-lg">🔧</span>
-          <h1 className="mt-4 text-[28px] font-extrabold tracking-tight text-foreground">Taller</h1>
+          <span className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-primario text-[24px] font-black tracking-tight text-white shadow-lg">CM</span>
+          <h1 className="mt-4 text-[28px] font-extrabold tracking-tight text-foreground">Car-Mec</h1>
           <p className="mt-1 text-[14.5px] text-mutado">Ingresá para ver tu panel</p>
         </div>
 

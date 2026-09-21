@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { useWhatsAppCliente } from "@/components/whatsapp-cliente";
 
 function IconoWhatsapp({ className }: { className?: string }) {
   return (
@@ -15,16 +15,21 @@ function IconoWhatsapp({ className }: { className?: string }) {
 // con la dirección real del sitio para que ande igual en la web publicada y en el celular.
 export function BotonCompartirInforme({
   ruta,
+  clienteId,
+  nombre,
   telefono,
   texto,
   variante = "completo",
 }: {
   ruta: string;
+  clienteId: string;
+  nombre: string;
   telefono: string;
   texto: string;
   variante?: "completo" | "icono";
 }) {
   const [copiado, setCopiado] = useState(false);
+  const { enviar, modal } = useWhatsAppCliente({ clienteId, nombre, telefono });
 
   function url() {
     return `${window.location.origin}${ruta}`;
@@ -33,7 +38,7 @@ export function BotonCompartirInforme({
   function compartir(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    window.open(enlaceWhatsApp(telefono, `${texto} ${url()}`), "_blank", "noopener,noreferrer");
+    enviar(() => `${texto} ${url()}`);
   }
 
   async function copiar(e: React.MouseEvent) {
@@ -50,19 +55,23 @@ export function BotonCompartirInforme({
 
   if (variante === "icono") {
     return (
-      <button
-        type="button"
-        onClick={compartir}
-        aria-label="Compartir informe por WhatsApp"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-exito-suave text-exito active:scale-90"
-      >
-        <IconoWhatsapp className="h-[18px] w-[18px]" />
-      </button>
+      <>
+        <button
+          type="button"
+          onClick={compartir}
+          aria-label="Compartir informe por WhatsApp"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-exito-suave text-exito active:scale-90"
+        >
+          <IconoWhatsapp className="h-[18px] w-[18px]" />
+        </button>
+        {modal}
+      </>
     );
   }
 
   return (
     <div className="flex gap-2">
+      {modal}
       <button
         type="button"
         onClick={compartir}

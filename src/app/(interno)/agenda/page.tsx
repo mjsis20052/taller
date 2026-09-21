@@ -76,7 +76,7 @@ export default async function PaginaAgenda({
   const libres = config && fechaSeleccionada >= hoy ? await horasLibresDelDia(fechaSeleccionada, config) : [];
 
   const incluir = {
-    cliente: { select: { nombre: true, telefono: true } },
+    cliente: { select: { id: true, nombre: true, telefono: true } },
     vehiculo: { select: { patente: true, marca: true, modelo: true } },
   };
   const sinPedidosWeb = { NOT: { motivo: { startsWith: MARCADOR_PEDIDO_PORTAL } } };

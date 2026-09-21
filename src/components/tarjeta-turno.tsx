@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { useWhatsAppCliente } from "@/components/whatsapp-cliente";
 import { esPedidoDePortal, limpiarMotivoPortal } from "@/lib/turno-portal";
 import { cancelarTurno, confirmarPedidoWeb } from "@/app/(interno)/agenda/actions";
 
@@ -17,7 +17,7 @@ type Turno = {
   duracionMin: number;
   motivo: string;
   estado: string;
-  cliente: { nombre: string; telefono: string };
+  cliente: { id: string; nombre: string; telefono: string };
   vehiculo: { patente: string; marca: string; modelo: string };
 };
 
@@ -28,6 +28,12 @@ export function TarjetaTurno({
   turno: Turno;
   mostrarFecha: boolean;
 }) {
+  const { enviar, modal } = useWhatsAppCliente({
+    clienteId: turno.cliente.id,
+    nombre: turno.cliente.nombre,
+    telefono: turno.cliente.telefono,
+  });
+
   const hora = new Intl.DateTimeFormat("es-AR", {
     hour: "2-digit",
     minute: "2-digit",
@@ -58,6 +64,7 @@ export function TarjetaTurno({
 
   return (
     <div className="rounded-2xl border border-borde bg-superficie p-4">
+      {modal}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-baseline gap-2">
           <span className="text-[17px] font-bold text-foreground">{hora}</span>
@@ -91,15 +98,16 @@ export function TarjetaTurno({
             Recepcionar vehículo
           </Link>
           <div className="flex gap-2">
-            <a
-              href={enlaceWhatsApp(turno.cliente.telefono, textoWhatsapp)}
-              target="_blank"
-              rel="noreferrer"
-              onClick={esDePortal ? () => confirmarPedidoWeb(turno.id) : undefined}
+            <button
+              type="button"
+              onClick={() => {
+                if (esDePortal) void confirmarPedidoWeb(turno.id);
+                enviar(textoWhatsapp);
+              }}
               className="flex-1 rounded-lg bg-exito-suave py-2 text-center text-[12.5px] font-semibold text-exito"
             >
               {esDePortal ? "Confirmar por WhatsApp" : "Recordar"}
-            </a>
+            </button>
             <Link
               href={`/agenda/${turno.id}/editar`}
               className="rounded-lg border border-borde px-3 py-2 text-[12.5px] font-semibold text-foreground"

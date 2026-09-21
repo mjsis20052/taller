@@ -11,8 +11,8 @@ export default function LayoutInforme({ children }: { children: React.ReactNode 
     <div className="flex min-h-full flex-1 flex-col">
       <header className="sticky top-0 z-40 border-b border-borde bg-superficie/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-xl items-center gap-2.5 px-5 py-3.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primario text-base">🔧</span>
-          <span className="text-[16px] font-extrabold tracking-tight text-foreground">Taller</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-primario text-[13px] font-black tracking-tight text-white">CM</span>
+          <span className="text-[16px] font-extrabold tracking-tight text-foreground">Car-Mec</span>
         </div>
       </header>
       <main className="mx-auto w-full max-w-xl flex-1 px-5 py-6">{children}</main>

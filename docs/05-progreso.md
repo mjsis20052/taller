@@ -537,6 +537,19 @@
   o se recuerda por WhatsApp (listarDeudoresConDetalle).
   Migracion: 20260921230000_informes_y_estado_pedido.
 
+- (2026-09-21) Marca: el taller se llama **Car-Mec**. Nombre en el manifest,
+  titulos, encabezados, login, portal e informes; icono plano de un solo
+  color (#6366f1) con monograma "CM" (icons/*.png v=3), pantalla de arranque
+  del mismo color (manifest background_color) y arranques de iOS por tamano
+  en public/splash/ (metadata appleWebApp.startupImage). Dentro de la app
+  instalada hay una animacion de entrada CSS (.splash-inicio, solo con
+  display-mode: standalone). Los PNG se generaron con next/og y la fuente
+  Segoe UI Black del sistema; para regenerarlos hay que repetir ese script.
+- (2026-09-21) WhatsApp sin telefono: todos los envios por WhatsApp pasan
+  por src/components/whatsapp-cliente.tsx; si el cliente no tiene telefono
+  cargado (menos de 8 digitos) se abre un modal que lo pide, lo guarda en
+  la ficha (guardarTelefonoCliente, con +549 automatico) y recien ahi envia.
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,

@@ -21,11 +21,11 @@ export default function LayoutInterno({
       <header className="sticky top-0 z-40 border-b border-borde bg-superficie/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-lg items-center gap-2 px-4 py-3 lg:max-w-4xl">
           <BotonVolver />
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primario text-base">
-            🔧
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primario text-[12px] font-black tracking-tight text-white">
+            CM
           </span>
-          <span className="text-[15px] font-bold tracking-tight text-foreground">
-            Taller
+          <span className="text-[15px] font-extrabold tracking-tight text-foreground">
+            Car-Mec
           </span>
           <div className="ml-auto flex items-center gap-1">
             <Suspense fallback={<IconoCuentaCorriente deudores={[]} />}>

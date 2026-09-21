@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Drawer } from "vaul";
 import type { DeudorDetalle } from "@/lib/cuenta-corriente";
 import { pesos } from "@/lib/formato";
-import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { EnlaceWhatsAppCliente } from "@/components/whatsapp-cliente";
 import { FormularioCobroCliente } from "@/components/formulario-cobro-cliente";
 
 function IconoBilletera(props: React.SVGProps<SVGSVGElement>) {
@@ -122,17 +122,15 @@ export function IconoCuentaCorriente({ deudores }: { deudores: DeudorDetalle[] }
                         </p>
 
                         <div className="flex gap-2">
-                          <a
-                            href={enlaceWhatsApp(
-                              d.telefono,
-                              `Hola ${d.nombre.split(" ")[0]}! Te escribimos del taller por un saldo pendiente de ${pesos(d.saldo)}. Cualquier duda, escribinos.`,
-                            )}
-                            target="_blank"
-                            rel="noreferrer"
+                          <EnlaceWhatsAppCliente
+                            clienteId={d.id}
+                            nombre={d.nombre}
+                            telefono={d.telefono}
+                            mensaje={`Hola ${d.nombre.split(" ")[0]}! Te escribimos del taller por un saldo pendiente de ${pesos(d.saldo)}. Cualquier duda, escribinos.`}
                             className="flex-1 rounded-xl bg-exito-suave py-2.5 text-center text-[13px] font-semibold text-exito"
                           >
                             Recordar por WhatsApp
-                          </a>
+                          </EnlaceWhatsAppCliente>
                           <Link
                             href={`/clientes/${d.id}#cuenta`}
                             onClick={() => setAbierto(false)}

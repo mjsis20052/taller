@@ -87,6 +87,8 @@ export default async function PaginaInformes() {
                   <p className="mb-2 text-[13px] font-bold text-foreground">Todos los trabajos realizados</p>
                   <BotonCompartirInforme
                     ruta={`/informe/cliente/${cliente.tokenInforme}`}
+                    clienteId={cliente.id}
+                    nombre={cliente.nombre}
                     telefono={cliente.telefono}
                     texto={`Hola ${cliente.nombre.split(" ")[0]}! Te comparto el historial de todos los trabajos que hicimos en tu vehículo:`}
                   />
@@ -113,6 +115,8 @@ export default async function PaginaInformes() {
                         <BotonCompartirInforme
                           variante="icono"
                           ruta={`/informe/${ot.tokenInforme}`}
+                          clienteId={cliente.id}
+                          nombre={cliente.nombre}
                           telefono={cliente.telefono}
                           texto={`Hola ${cliente.nombre.split(" ")[0]}! Te comparto el informe de tu ${ot.vehiculo.marca} ${ot.vehiculo.modelo} (${ot.numero}). Ahí ves cómo avanza:`}
                         />

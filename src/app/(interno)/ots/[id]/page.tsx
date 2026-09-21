@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { EnlaceWhatsAppCliente } from "@/components/whatsapp-cliente";
 import { PanelAccionesOT } from "@/components/panel-acciones-ot";
 import { GaleriaFotosOT } from "@/components/galeria-fotos-ot";
 import { FormularioTrabajoOT } from "@/components/formulario-trabajo-ot";
@@ -116,14 +116,15 @@ export default async function PaginaDetalleOT({
       </div>
 
       {mensajeWhatsapp && (
-        <a
-          href={enlaceWhatsApp(ot.cliente.telefono, mensajeWhatsapp)}
-          target="_blank"
-          rel="noreferrer"
-          className="mb-5 flex items-center justify-center gap-2 rounded-xl bg-exito-suave py-3 text-[14px] font-semibold text-exito"
+        <EnlaceWhatsAppCliente
+          clienteId={ot.cliente.id}
+          nombre={ot.cliente.nombre}
+          telefono={ot.cliente.telefono}
+          mensaje={mensajeWhatsapp}
+          className="mb-5 flex w-full items-center justify-center gap-2 rounded-xl bg-exito-suave py-3 text-[14px] font-semibold text-exito"
         >
           {ot.estado === "FACTURADO" ? "Avisar: factura lista" : "Avisar: listo para retirar"}
-        </a>
+        </EnlaceWhatsAppCliente>
       )}
 
       {estadoRepuestos === "ESPERANDO" && (
@@ -161,6 +162,8 @@ export default async function PaginaDetalleOT({
           </p>
           <BotonCompartirInforme
             ruta={`/informe/${ot.tokenInforme}`}
+            clienteId={ot.cliente.id}
+            nombre={ot.cliente.nombre}
             telefono={ot.cliente.telefono}
             texto={`Hola ${ot.cliente.nombre.split(" ")[0]}! Te comparto el informe de tu ${ot.vehiculo.marca} ${ot.vehiculo.modelo} (${ot.numero}). Ahí ves cómo avanza:`}
           />
@@ -171,6 +174,7 @@ export default async function PaginaDetalleOT({
         <section className="mb-8">
           <NovedadRapida
             otId={ot.id}
+            clienteId={ot.cliente.id}
             telefono={ot.cliente.telefono}
             nombreCliente={ot.cliente.nombre}
             vehiculo={`${ot.vehiculo.marca} ${ot.vehiculo.modelo}`}

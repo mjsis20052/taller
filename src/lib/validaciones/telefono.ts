@@ -17,3 +17,8 @@ export function normalizarTelefono(valor: string): string {
   if (digitos.startsWith("54") && digitos.length === 12) return `+549${digitos.slice(2)}`;
   return `+549${digitos.replace(/^0+/, "")}`;
 }
+
+// "Cargado" = tiene al menos 8 dígitos (sirve para armar el link de WhatsApp).
+export function tieneTelefono(valor: string | null | undefined): boolean {
+  return (valor ?? "").replace(/\D/g, "").length >= 8;
+}

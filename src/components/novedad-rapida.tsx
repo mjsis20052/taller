@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { publicarNovedadOT } from "@/app/(interno)/ots/actions";
-import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { useWhatsAppCliente } from "@/components/whatsapp-cliente";
 
 const RAPIDAS = [
   "Empezamos con el trabajo",
@@ -18,12 +18,14 @@ const RAPIDAS = [
 // y se puede avisar por WhatsApp desde acá mismo.
 export function NovedadRapida({
   otId,
+  clienteId,
   telefono,
   nombreCliente,
   vehiculo,
   ruta,
 }: {
   otId: string;
+  clienteId: string;
   telefono: string;
   nombreCliente: string;
   vehiculo: string;
@@ -32,6 +34,7 @@ export function NovedadRapida({
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [ultima, setUltima] = useState<string | null>(null);
+  const { enviar, modal } = useWhatsAppCliente({ clienteId, nombre: nombreCliente, telefono });
 
   async function publicar(contenido: string) {
     const limpio = contenido.trim();
@@ -45,12 +48,15 @@ export function NovedadRapida({
 
   function avisarPorWhatsapp() {
     if (!ultima) return;
-    const mensaje = `Hola ${nombreCliente.split(" ")[0]}! Novedad de tu ${vehiculo}: ${ultima}. Mirá cómo avanza acá: ${window.location.origin}${ruta}`;
-    window.open(enlaceWhatsApp(telefono, mensaje), "_blank", "noopener,noreferrer");
+    enviar(
+      () =>
+        `Hola ${nombreCliente.split(" ")[0]}! Novedad de tu ${vehiculo}: ${ultima}. Mirá cómo avanza acá: ${window.location.origin}${ruta}`,
+    );
   }
 
   return (
     <div className="rounded-2xl border border-borde bg-superficie p-4">
+      {modal}
       <p className="text-[14.5px] font-bold text-foreground">Novedad rápida</p>
       <p className="mb-3 mt-0.5 text-[12.5px] text-mutado">
         Tocá una y se publica al instante en el informe del cliente.

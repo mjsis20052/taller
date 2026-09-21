@@ -32,7 +32,7 @@ export default async function Inicio() {
     prisma.turno.findMany({
       where: { fechaHora: { gte: inicio, lte: fin }, estado: EstadoTurno.AGENDADO },
       include: {
-        cliente: { select: { nombre: true, telefono: true } },
+        cliente: { select: { id: true, nombre: true, telefono: true } },
         vehiculo: { select: { patente: true, marca: true, modelo: true } },
       },
       orderBy: { fechaHora: "asc" },
@@ -40,7 +40,7 @@ export default async function Inicio() {
     prisma.ordenTrabajo.findMany({
       where: { estado: { notIn: [EstadoOT.ENTREGADO, EstadoOT.CANCELADA] } },
       include: {
-        cliente: { select: { nombre: true, telefono: true } },
+        cliente: { select: { id: true, nombre: true, telefono: true } },
         vehiculo: { select: { patente: true, marca: true, modelo: true } },
         items: { select: { tipo: true, estadoPedido: true } },
       },
@@ -129,6 +129,8 @@ export default async function Inicio() {
                   <BotonCompartirInforme
                     variante="icono"
                     ruta={`/informe/${ot.tokenInforme}`}
+                    clienteId={ot.clienteId}
+                    nombre={ot.cliente.nombre}
                     telefono={ot.cliente.telefono}
                     texto={`Hola ${ot.cliente.nombre.split(" ")[0]}! Te comparto el informe de tu ${ot.vehiculo.marca} ${ot.vehiculo.modelo} (${ot.numero}). Ahí ves cómo avanza:`}
                   />
