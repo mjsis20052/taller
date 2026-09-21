@@ -570,6 +570,10 @@
   regeneradas; iconos ?v=4. El aviso "hay una actualizacion" ya existia y se
   dispara solo en las instalaciones que tengan esta version o una posterior.
 
+- (2026-09-21) Inicio: recuadro destacado "Estamos esperando repuestos" con cada
+  OT, sus repuestos por pedir/pedidos y hace cuantos dias. Una OT sale de
+  "Activas" al entregarse (se mantuvo asi a pedido del usuario).
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,

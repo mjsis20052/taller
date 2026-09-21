@@ -28,7 +28,7 @@ export default async function Inicio() {
   const inicio = new Date(`${hoy}T00:00:00-03:00`);
   const fin = new Date(`${hoy}T23:59:59.999-03:00`);
 
-  const [turnosHoy, otsActivas] = await Promise.all([
+  const [turnosHoy, otsActivas, esperandoRepuesto] = await Promise.all([
     prisma.turno.findMany({
       where: { fechaHora: { gte: inicio, lte: fin }, estado: EstadoTurno.AGENDADO },
       include: {
@@ -47,11 +47,60 @@ export default async function Inicio() {
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
+    prisma.ordenTrabajo.findMany({
+      where: {
+        estado: { notIn: [EstadoOT.ENTREGADO, EstadoOT.CANCELADA] },
+        items: { some: { tipo: "REPUESTO", estadoPedido: { in: ["A_PEDIR", "PEDIDO"] } } },
+      },
+      select: {
+        id: true,
+        numero: true,
+        vehiculo: { select: { patente: true, marca: true, modelo: true } },
+        items: {
+          where: { tipo: "REPUESTO", estadoPedido: { in: ["A_PEDIR", "PEDIDO"] } },
+          select: { id: true, descripcion: true, estadoPedido: true, createdAt: true },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    }),
   ]);
 
   return (
     <section>
       <EncabezadoPagina titulo="Inicio" descripcion="Turnos de hoy y OTs activas." />
+
+      {esperandoRepuesto.length > 0 && (
+        <section className="mb-6 rounded-2xl border-2 border-alerta/50 bg-alerta-suave p-4">
+          <h2 className="flex items-center gap-2 text-[15.5px] font-extrabold text-alerta">
+            <span aria-hidden>⏳</span> Estamos esperando repuestos
+          </h2>
+          <p className="mb-3 text-[12.5px] text-mutado">No te olvides de reclamarlos o avisarle al cliente cuando lleguen.</p>
+          <div className="space-y-2">
+            {esperandoRepuesto.map((ot) => (
+              <Link key={ot.id} href={`/ots/${ot.id}`} className="block rounded-xl bg-superficie px-3.5 py-3">
+                <p className="text-[14px] font-bold text-foreground">
+                  {ot.numero} · {ot.vehiculo.marca} {ot.vehiculo.modelo}{" "}
+                  <span className="font-medium text-mutado">{ot.vehiculo.patente}</span>
+                </p>
+                <ul className="mt-1 space-y-0.5">
+                  {ot.items.map((i) => {
+                    const dias = Math.floor((Date.now() - i.createdAt.getTime()) / 86_400_000);
+                    return (
+                      <li key={i.id} className="flex items-center justify-between gap-2 text-[12.5px]">
+                        <span className="text-foreground">{i.descripcion}</span>
+                        <span className="shrink-0 font-semibold text-alerta">
+                          {i.estadoPedido === "A_PEDIR" ? "Por pedir" : "Pedido"} · {dias === 0 ? "hoy" : `hace ${dias} d`}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
