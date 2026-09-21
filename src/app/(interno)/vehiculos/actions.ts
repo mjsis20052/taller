@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { normalizarPatente, validarPatente } from "@/lib/validaciones/patente";
+import { normalizarPatente } from "@/lib/validaciones/patente";
 import { storageAdapter } from "@/lib/storage/local-adapter";
 import { EntidadFoto } from "@/generated/prisma/enums";
 
@@ -28,8 +28,8 @@ function validarDatosVehiculo(
 ): ErroresFormularioVehiculo {
   const errores: ErroresFormularioVehiculo = {};
 
-  if (!datos.patente || !validarPatente(datos.patente)) {
-    errores.patente = "Patente inválida. Formatos: AAA123 o AA123BB.";
+  if (!normalizarPatente(datos.patente)) {
+    errores.patente = "Ingresá la patente.";
   }
   if (!datos.marca) {
     errores.marca = "Ingresá la marca.";

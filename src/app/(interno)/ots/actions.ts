@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { recalcularTotalesOT, siguienteNumeroOT } from "@/lib/ordenes-trabajo";
+import { normalizarPatente } from "@/lib/validaciones/patente";
+import { normalizarTelefono } from "@/lib/validaciones/telefono";
 import { storageAdapter } from "@/lib/storage/local-adapter";
 import {
   EntidadFoto,
@@ -23,8 +25,14 @@ export async function crearOT(
   _estadoPrevio: ErroresFormularioOT,
   formData: FormData,
 ): Promise<ErroresFormularioOT> {
-  const clienteId = String(formData.get("clienteId") ?? "").trim();
-  const vehiculoId = String(formData.get("vehiculoId") ?? "").trim();
+  let clienteId = String(formData.get("clienteId") ?? "").trim();
+  let vehiculoId = String(formData.get("vehiculoId") ?? "").trim();
+  if (vehiculoId === "__nuevo") vehiculoId = "";
+  const nombreNuevo = String(formData.get("clienteNuevoNombre") ?? "").trim();
+  const telefonoNuevo = normalizarTelefono(String(formData.get("clienteNuevoTelefono") ?? ""));
+  const patenteNueva = normalizarPatente(String(formData.get("vehiculoNuevoPatente") ?? ""));
+  const marcaNueva = String(formData.get("vehiculoNuevoMarca") ?? "").trim();
+  const modeloNuevo = String(formData.get("vehiculoNuevoModelo") ?? "").trim();
   const motivo = String(formData.get("motivo") ?? "").trim();
   const kmTexto = String(formData.get("kmIngreso") ?? "").trim();
   const kmIngreso = Number(kmTexto);
@@ -32,8 +40,32 @@ export async function crearOT(
   const nivelCombustible = (nivelCombustibleTexto || null) as NivelCombustible | null;
 
   const errores: ErroresFormularioOT = {};
-  if (!clienteId) errores.clienteId = "Elegí un cliente.";
-  if (!vehiculoId) errores.vehiculoId = "Elegí un vehículo.";
+
+  // Si la patente ya está cargada se usa ese vehículo (y su dueño si no se eligió cliente).
+  if (!vehiculoId && patenteNueva) {
+    const existente = await prisma.vehiculo.findUnique({
+      where: { patente: patenteNueva },
+      include: { cliente: { select: { nombre: true } } },
+    });
+    if (existente) {
+      if (clienteId && existente.clienteId !== clienteId) {
+        errores.vehiculoId = `La patente ${patenteNueva} ya está cargada a nombre de ${existente.cliente.nombre}.`;
+      } else if (!clienteId && (nombreNuevo || telefonoNuevo)) {
+        errores.vehiculoId = `La patente ${patenteNueva} ya está cargada a nombre de ${existente.cliente.nombre}: elegí ese cliente.`;
+      } else {
+        vehiculoId = existente.id;
+        clienteId = existente.clienteId;
+      }
+    }
+  }
+
+  const clienteNuevoCompleto = Boolean(nombreNuevo && telefonoNuevo);
+  const vehiculoNuevoCompleto = Boolean(patenteNueva && marcaNueva && modeloNuevo);
+
+  if (!clienteId && !clienteNuevoCompleto) errores.clienteId = "Elegí un cliente o cargá uno nuevo (nombre y teléfono).";
+  if (!vehiculoId && !vehiculoNuevoCompleto && !errores.vehiculoId) {
+    errores.vehiculoId = "Elegí un vehículo o cargá uno nuevo (patente, marca y modelo).";
+  }
   if (!motivo) errores.motivo = "Ingresá el motivo de ingreso.";
   if (!kmTexto || Number.isNaN(kmIngreso) || kmIngreso < 0) {
     errores.kmIngreso = "Ingresá el kilometraje.";
@@ -41,6 +73,27 @@ export async function crearOT(
   if (Object.keys(errores).length > 0) return errores;
 
   const otId = await prisma.$transaction(async (tx) => {
+    if (!clienteId) {
+      const existente = await tx.cliente.findFirst({ where: { telefono: telefonoNuevo } });
+      const cliente =
+        existente ??
+        (await tx.cliente.create({
+          data: {
+            nombre: nombreNuevo,
+            telefono: telefonoNuevo,
+            tipoPersona: "FISICA",
+            condicionFiscal: "CONSUMIDOR_FINAL",
+          },
+        }));
+      clienteId = cliente.id;
+    }
+    if (!vehiculoId) {
+      const vehiculo = await tx.vehiculo.create({
+        data: { clienteId, patente: patenteNueva, marca: marcaNueva, modelo: modeloNuevo },
+      });
+      vehiculoId = vehiculo.id;
+    }
+
     const numero = await siguienteNumeroOT(tx);
 
     const ot = await tx.ordenTrabajo.create({

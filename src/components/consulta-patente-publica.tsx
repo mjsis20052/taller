@@ -16,7 +16,6 @@ export function ConsultaPatentePublica() {
         <input
           name="patente"
           required
-          maxLength={7}
           placeholder="AB123CD"
           className={estiloInput}
         />

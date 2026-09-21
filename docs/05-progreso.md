@@ -506,6 +506,15 @@
   caches y recarga. iOS guarda el icono al instalar: para verlo nuevo hay
   que borrar la app de la pantalla de inicio y volver a agregarla.
 
+- (2026-09-21) Recepcion: si el cliente no esta cargado se crea ahi mismo
+  (nombre + telefono, +549 automatico) y tambien el vehiculo (patente,
+  marca, modelo); si la patente ya existe se usa ese vehiculo y su dueno
+  (o avisa si es de otro cliente). Patente libre: sin formato ni tope de
+  largo (solo mayusculas y sin espacios/guiones). Los formularios de
+  recepcion, vehiculo y pedido de turno del portal guardan cada campo en
+  estado: React 19 reinicia los campos sin estado cuando el envio falla,
+  por eso antes se borraban marca/modelo.
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,

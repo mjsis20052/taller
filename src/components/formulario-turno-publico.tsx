@@ -13,11 +13,19 @@ const estiloLabel = "block text-[13px] font-medium text-mutado mb-1.5";
 const estiloError = "mt-1 text-[12.5px] text-peligro";
 
 function hoyISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toLocaleDateString("en-CA");
 }
 
 export function FormularioTurnoPublico() {
   const [estado, ejecutarAccion, enviando] = useActionState(solicitarTurnoPublico, {});
+  // Todos los campos guardan su valor en estado: si el envío tiene un error no se borra lo escrito.
+  const [nombre, setNombre] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [patente, setPatente] = useState("");
+  const [marca, setMarca] = useState("");
+  const [modelo, setModelo] = useState("");
+  const [motivo, setMotivo] = useState("");
+  const [hora, setHora] = useState("");
   const [fecha, setFecha] = useState(hoyISO());
   const [horarios, setHorarios] = useState<string[]>([]);
   const [cargandoHorarios, setCargandoHorarios] = useState(true);
@@ -29,6 +37,7 @@ export function FormularioTurnoPublico() {
       const lista = await obtenerHorariosDisponiblesPublico(fecha);
       if (cancelado) return;
       setHorarios(lista);
+      setHora((actual) => (lista.includes(actual) ? actual : ""));
       setCargandoHorarios(false);
     }
     cargar();
@@ -64,7 +73,16 @@ export function FormularioTurnoPublico() {
         <label className={estiloLabel} htmlFor="nombre">
           Tu nombre
         </label>
-        <input id="nombre" name="nombre" required autoFocus className={estiloInput} placeholder="Juan Pérez" />
+        <input
+          id="nombre"
+          name="nombre"
+          required
+          autoFocus
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          className={estiloInput}
+          placeholder="Juan Pérez"
+        />
         {estado.nombre && <p className={estiloError}>{estado.nombre}</p>}
       </div>
 
@@ -77,6 +95,8 @@ export function FormularioTurnoPublico() {
           name="telefono"
           type="tel"
           required
+          value={telefono}
+          onChange={(e) => setTelefono(e.target.value)}
           className={estiloInput}
           placeholder="Ej: 2214567890"
         />
@@ -91,9 +111,13 @@ export function FormularioTurnoPublico() {
           id="patente"
           name="patente"
           required
-          maxLength={8}
+          value={patente}
+          onChange={(e) => setPatente(e.target.value)}
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
           className={`${estiloInput} uppercase`}
-          placeholder="AB123CD"
+          placeholder="Tu patente"
         />
         {estado.patente && <p className={estiloError}>{estado.patente}</p>}
       </div>
@@ -103,14 +127,28 @@ export function FormularioTurnoPublico() {
           <label className={estiloLabel} htmlFor="marca">
             Marca
           </label>
-          <input id="marca" name="marca" className={estiloInput} placeholder="Ford" />
+          <input
+            id="marca"
+            name="marca"
+            value={marca}
+            onChange={(e) => setMarca(e.target.value)}
+            className={estiloInput}
+            placeholder="Ford"
+          />
           {estado.marca && estado.marca.trim() && <p className={estiloError}>{estado.marca}</p>}
         </div>
         <div>
           <label className={estiloLabel} htmlFor="modelo">
             Modelo
           </label>
-          <input id="modelo" name="modelo" className={estiloInput} placeholder="Fiesta" />
+          <input
+            id="modelo"
+            name="modelo"
+            value={modelo}
+            onChange={(e) => setModelo(e.target.value)}
+            className={estiloInput}
+            placeholder="Fiesta"
+          />
         </div>
       </div>
       <p className="-mt-3 text-[12px] text-mutado">
@@ -126,6 +164,8 @@ export function FormularioTurnoPublico() {
           name="motivo"
           required
           rows={3}
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
           className={estiloInput}
           placeholder="Ej: cambio de aceite, ruido raro al frenar…"
         />
@@ -153,7 +193,15 @@ export function FormularioTurnoPublico() {
           <label className={estiloLabel} htmlFor="hora">
             Horario disponible
           </label>
-          <select id="hora" name="hora" required disabled={cargandoHorarios} className={estiloInput}>
+          <select
+            id="hora"
+            name="hora"
+            required
+            disabled={cargandoHorarios}
+            value={hora}
+            onChange={(e) => setHora(e.target.value)}
+            className={estiloInput}
+          >
             {cargandoHorarios ? (
               <option value="">Buscando horarios…</option>
             ) : horarios.length === 0 ? (

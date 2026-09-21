@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { ErroresFormularioVehiculo } from "@/app/(interno)/vehiculos/actions";
 import { CamposOpcionales } from "@/components/campos-opcionales";
 
@@ -32,6 +32,15 @@ export function FormularioVehiculo({
 }) {
   const [errores, ejecutarAccion, enviando] = useActionState(accion, {});
 
+  // Los campos se guardan en estado: si el envío falla (por ejemplo patente repetida)
+  // el formulario no se reinicia y no se pierde lo que ya se escribió.
+  const [patente, setPatente] = useState(vehiculo?.patente ?? "");
+  const [marca, setMarca] = useState(vehiculo?.marca ?? "");
+  const [modelo, setModelo] = useState(vehiculo?.modelo ?? "");
+  const [anio, setAnio] = useState(vehiculo?.anio ? String(vehiculo.anio) : "");
+  const [color, setColor] = useState(vehiculo?.color ?? "");
+  const [vin, setVin] = useState(vehiculo?.vin ?? "");
+
   return (
     <form action={ejecutarAccion} className="space-y-5">
       <div>
@@ -43,10 +52,13 @@ export function FormularioVehiculo({
           name="patente"
           required
           autoFocus={!vehiculo}
-          defaultValue={vehiculo?.patente}
+          value={patente}
+          onChange={(e) => setPatente(e.target.value)}
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
           className={`${estiloInput} uppercase`}
-          placeholder="AB123CD"
-          maxLength={7}
+          placeholder="La que sea (AB123CD, 123ABC…)"
         />
         {errores.patente && <p className={estiloError}>{errores.patente}</p>}
       </div>
@@ -60,7 +72,8 @@ export function FormularioVehiculo({
             id="marca"
             name="marca"
             required
-            defaultValue={vehiculo?.marca}
+            value={marca}
+            onChange={(e) => setMarca(e.target.value)}
             className={estiloInput}
             placeholder="Ford"
           />
@@ -74,7 +87,8 @@ export function FormularioVehiculo({
             id="modelo"
             name="modelo"
             required
-            defaultValue={vehiculo?.modelo}
+            value={modelo}
+            onChange={(e) => setModelo(e.target.value)}
             className={estiloInput}
             placeholder="Fiesta"
           />
@@ -95,7 +109,8 @@ export function FormularioVehiculo({
               id="anio"
               name="anio"
               inputMode="numeric"
-              defaultValue={vehiculo?.anio ?? ""}
+              value={anio}
+              onChange={(e) => setAnio(e.target.value)}
               className={estiloInput}
               placeholder="2018"
             />
@@ -108,7 +123,8 @@ export function FormularioVehiculo({
             <input
               id="color"
               name="color"
-              defaultValue={vehiculo?.color ?? ""}
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
               className={estiloInput}
               placeholder="opcional"
             />
@@ -122,7 +138,8 @@ export function FormularioVehiculo({
           <input
             id="vin"
             name="vin"
-            defaultValue={vehiculo?.vin ?? ""}
+            value={vin}
+            onChange={(e) => setVin(e.target.value)}
             className={estiloInput}
             placeholder="opcional"
           />
