@@ -88,7 +88,7 @@ const APPS: { href: string; etiqueta: string; Icono: Icono; color: string }[] = 
   { href: "/vehiculos", etiqueta: "Vehículos", Icono: IconoVehiculos, color: "from-sky-500 to-blue-600" },
   { href: "/stock", etiqueta: "Stock", Icono: IconoStock, color: "from-amber-400 to-orange-500" },
   { href: "/gastos", etiqueta: "Gastos", Icono: IconoGastos, color: "from-rose-400 to-red-500" },
-  { href: "/cobranzas", etiqueta: "Cobranzas", Icono: IconoCobranzas, color: "from-emerald-400 to-teal-600" },
+  { href: "/cobranzas", etiqueta: "Cuenta corriente", Icono: IconoCobranzas, color: "from-emerald-400 to-teal-600" },
   { href: "/facturacion", etiqueta: "Facturación", Icono: IconoFacturacion, color: "from-cyan-400 to-sky-600" },
   { href: "/reportes", etiqueta: "Reportes", Icono: IconoReportes, color: "from-fuchsia-500 to-purple-600" },
   { href: "/configuracion", etiqueta: "Horarios", Icono: IconoHorarios, color: "from-slate-500 to-slate-700" },

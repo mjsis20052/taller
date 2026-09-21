@@ -11,6 +11,7 @@ import { FormularioPagoOT } from "@/components/formulario-pago-ot";
 import { cambiarEstadoPedido, eliminarItemOT } from "@/app/(interno)/ots/actions";
 import { BotonCompartirInforme } from "@/components/boton-compartir-informe";
 import { NovedadRapida } from "@/components/novedad-rapida";
+import { PresupuestoRapido } from "@/components/presupuesto-rapido";
 import { ETIQUETA_PEDIDO, resumenPedidos, type EstadoPedido } from "@/lib/pedidos";
 import { eliminarPagoOT } from "@/app/(interno)/cobranzas/actions";
 import { BotonQuitarConfirmando } from "@/components/boton-quitar-confirmando";
@@ -166,6 +167,22 @@ export default async function PaginaDetalleOT({
             nombre={ot.cliente.nombre}
             telefono={ot.cliente.telefono}
             texto={`Hola ${ot.cliente.nombre.split(" ")[0]}! Te comparto el informe de tu ${ot.vehiculo.marca} ${ot.vehiculo.modelo} (${ot.numero}). Ahí ves cómo avanza:`}
+          />
+        </section>
+      )}
+
+      {["INGRESADO", "EN_DIAGNOSTICO", "PRESUPUESTADO"].includes(ot.estado) && (
+        <section className="mb-5">
+          <PresupuestoRapido
+            otId={ot.id}
+            estado={ot.estado}
+            cantidadItems={ot.items.length}
+            total={Number(ot.total)}
+            clienteId={ot.cliente.id}
+            nombreCliente={ot.cliente.nombre}
+            telefono={ot.cliente.telefono}
+            vehiculo={`${ot.vehiculo.marca} ${ot.vehiculo.modelo}`}
+            ruta={`/informe/${ot.tokenInforme}`}
           />
         </section>
       )}

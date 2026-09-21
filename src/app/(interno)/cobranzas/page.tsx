@@ -7,18 +7,19 @@ import { listarCuentas } from "@/lib/cuenta-corriente";
 import { pesos } from "@/lib/formato";
 import { EnlaceWhatsAppCliente } from "@/components/whatsapp-cliente";
 
-export const metadata: Metadata = { title: "Cobranzas" };
+export const metadata: Metadata = { title: "Cuenta corriente" };
 
 export default async function PaginaCobranzas() {
   const cuentas = await listarCuentas();
   const deudores = cuentas.filter((c) => c.saldo > 0);
   const aFavor = cuentas.filter((c) => c.saldo < 0);
+  const alDia = cuentas.filter((c) => c.saldo === 0);
   const totalAdeudado = deudores.reduce((acc, d) => acc + d.saldo, 0);
   const totalEnCurso = deudores.reduce((acc, d) => acc + d.enCurso, 0);
 
   return (
     <section>
-      <EncabezadoPagina titulo="Cobranzas" descripcion="Lo que te deben tus clientes, al día." />
+      <EncabezadoPagina titulo="Cuenta corriente" descripcion="Todas las cuentas de tus clientes: quién debe, quién tiene a favor y quién está al día." />
 
       <div className="mb-4 grid grid-cols-2 gap-2.5">
         <div className="rounded-2xl border border-alerta/30 bg-alerta-suave p-4">
@@ -120,6 +121,24 @@ export default async function PaginaCobranzas() {
                 <span className="rounded-full bg-exito-suave px-2.5 py-1 text-[12.5px] font-bold text-exito">
                   {pesos(-c.saldo)}
                 </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {alDia.length > 0 && (
+        <div className="mt-6">
+          <h2 className="mb-2 text-[14px] font-semibold text-foreground">Al día</h2>
+          <div className="space-y-2">
+            {alDia.map((c) => (
+              <Link
+                key={c.id}
+                href={`/clientes/${c.id}#cuenta`}
+                className="flex items-center justify-between gap-3 rounded-xl border border-borde bg-superficie px-4 py-3"
+              >
+                <span className="text-[14px] font-medium text-foreground">{c.nombre}</span>
+                <span className="text-[12.5px] font-semibold text-exito">Sin deuda ✓</span>
               </Link>
             ))}
           </div>

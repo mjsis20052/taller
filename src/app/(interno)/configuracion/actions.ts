@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { guardarConfigHorarios, hoyEnArgentina } from "@/lib/horarios";
+import { guardarDatosCobro } from "@/lib/datos-cobro";
 import { esFechaValida, normalizarHoras } from "@/lib/horarios-comunes";
 
 export type ErroresConfigHorarios = { duracionMin?: string; ok?: boolean };
@@ -39,5 +40,18 @@ export async function actualizarConfigHorarios(
   revalidatePath("/configuracion");
   revalidatePath("/agenda");
   revalidatePath("/portal");
+  return { ok: true };
+}
+
+export async function actualizarDatosCobro(
+  _previo: { ok?: boolean; error?: string },
+  formData: FormData,
+): Promise<{ ok?: boolean; error?: string }> {
+  const alias = String(formData.get("alias") ?? "").trim().slice(0, 60);
+  const titular = String(formData.get("titular") ?? "").trim().slice(0, 80);
+  const link = String(formData.get("link") ?? "").trim().slice(0, 300);
+  if (link && !/^https:\/\//i.test(link)) return { error: "El link tiene que empezar con https://" };
+  await guardarDatosCobro({ alias, titular, link });
+  revalidatePath("/configuracion");
   return { ok: true };
 }

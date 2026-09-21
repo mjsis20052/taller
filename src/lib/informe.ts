@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { EstadoOT } from "@/generated/prisma/enums";
 import { montoFirmado } from "@/lib/formato";
+import { obtenerDatosCobro, type DatosCobro } from "@/lib/datos-cobro";
 
 // Datos de los informes que se comparten con el cliente. Se leen por el enlace secreto
 // (token) y solo llevan lo que le corresponde al propio cliente: nunca teléfono ni documentos.
@@ -18,6 +19,16 @@ export type ItemInforme = {
 
 export type NovedadInforme = { id: string; fecha: Date; estado: string; nota: string | null };
 
+export type FotoInforme = { id: string; url: string };
+
+export type PresupuestoInforme = {
+  id: string;
+  total: number;
+  validezDias: number;
+  enviadoAt: Date | null;
+  items: { tipo: string; descripcion: string; falla: string | null; cantidad: number; precioUnitario: number }[];
+};
+
 export type InformeOT = {
   token: string;
   numero: string;
@@ -34,6 +45,10 @@ export type InformeOT = {
   pagado: number;
   saldo: number;
   novedades: NovedadInforme[];
+  fotos: FotoInforme[];
+  // Presupuesto enviado que el cliente todavía tiene que aprobar o rechazar.
+  presupuestoPorAprobar: PresupuestoInforme | null;
+  cobro: DatosCobro;
 };
 
 function armarItem(i: {
@@ -65,6 +80,8 @@ const INCLUIR_OT = {
   items: { orderBy: { createdAt: "asc" as const } },
   cobros: { select: { monto: true, concepto: true } },
   timeline: { orderBy: { fecha: "desc" as const } },
+  fotos: { select: { id: true }, orderBy: { fechaTomada: "asc" as const } },
+  presupuestos: { orderBy: { createdAt: "desc" as const }, take: 1 },
 };
 
 type OTConDatos = NonNullable<Awaited<ReturnType<typeof buscarOT>>>;
@@ -73,10 +90,21 @@ function buscarOT(where: { tokenInforme: string }) {
   return prisma.ordenTrabajo.findUnique({ where, include: INCLUIR_OT });
 }
 
-function armarInforme(ot: OTConDatos): InformeOT {
+function armarInforme(ot: OTConDatos, cobro: DatosCobro): InformeOT {
   const items = ot.items.map(armarItem);
   const pagado = ot.cobros.reduce((acc, c) => acc + montoFirmado(c), 0);
   const total = Number(ot.total);
+  const ultimo = ot.presupuestos[0];
+  const presupuestoPorAprobar: PresupuestoInforme | null =
+    ultimo && ultimo.estado === "ENVIADO" && ot.estado === EstadoOT.PRESUPUESTADO
+      ? {
+          id: ultimo.id,
+          total: Number(ultimo.total),
+          validezDias: ultimo.validezDias,
+          enviadoAt: ultimo.enviadoAt,
+          items: (ultimo.itemsSnapshot as PresupuestoInforme["items"]) ?? [],
+        }
+      : null;
   return {
     token: ot.tokenInforme,
     numero: ot.numero,
@@ -93,6 +121,9 @@ function armarInforme(ot: OTConDatos): InformeOT {
     pagado,
     saldo: total - pagado,
     novedades: ot.timeline.map((t) => ({ id: t.id, fecha: t.fecha, estado: t.estado, nota: t.nota })),
+    fotos: ot.fotos.map((f) => ({ id: f.id, url: `/informe/foto/${ot.tokenInforme}/${f.id}` })),
+    presupuestoPorAprobar,
+    cobro,
   };
 }
 
@@ -100,7 +131,7 @@ export async function cargarInformeOT(token: string): Promise<InformeOT | null> 
   if (!/^[a-f0-9]{32}$/.test(token)) return null;
   const ot = await buscarOT({ tokenInforme: token });
   if (!ot || ot.estado === EstadoOT.TURNO_AGENDADO) return null;
-  return armarInforme(ot);
+  return armarInforme(ot, await obtenerDatosCobro());
 }
 
 export type InformeCliente = {
@@ -110,6 +141,7 @@ export type InformeCliente = {
   total: number;
   pagado: number;
   saldo: number;
+  cobro: DatosCobro;
 };
 
 export async function cargarInformeCliente(token: string): Promise<InformeCliente | null> {
@@ -128,8 +160,9 @@ export async function cargarInformeCliente(token: string): Promise<InformeClient
   });
   if (!cliente) return null;
 
-  const ots = cliente.ordenesTrabajo.map((ot) => armarInforme(ot as OTConDatos));
+  const cobro = await obtenerDatosCobro();
+  const ots = cliente.ordenesTrabajo.map((ot) => armarInforme(ot as OTConDatos, cobro));
   const total = ots.reduce((acc, o) => acc + o.total, 0);
   const pagado = ots.reduce((acc, o) => acc + o.pagado, 0);
-  return { token: cliente.tokenInforme, nombre: cliente.nombre, ots, total, pagado, saldo: total - pagado };
+  return { token: cliente.tokenInforme, nombre: cliente.nombre, ots, total, pagado, saldo: total - pagado, cobro };
 }

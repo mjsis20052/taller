@@ -550,6 +550,26 @@
   cargado (menos de 8 digitos) se abre un modal que lo pide, lo guarda en
   la ficha (guardarTelefonoCliente, con +549 automatico) y recien ahi envia.
 
+- (2026-09-21) Informe del cliente: ahora muestra las **fotos** de la OT (ruta
+  publica /informe/foto/<token>/<fotoId>, solo sirve fotos de esa OT; el resto de
+  /uploads sigue tras el login), deja **aprobar o rechazar el presupuesto** con un
+  toque (informe/actions.ts; aprobado -> OT APROBADO + novedad) y tiene el boton
+  **Hacer pago** con el alias/titular/link de Mercado Pago que se cargan en
+  Mas > Horarios > "Datos para cobrar" (tabla Config: cobro_alias, cobro_titular,
+  cobro_link). Sin migracion.
+- (2026-09-21) **Fotos en el servidor**: el contenedor no podia escribir en
+  /app/uploads ni lo guardaba en un volumen (las fotos se perdian al redeploy).
+  Dockerfile crea /app/uploads para el usuario nextjs y el compose del VPS monta
+  el volumen `taller_uploads:/app/uploads` (lo agrega ssh_deploy_mejoras.py).
+  Las fotos sacadas antes de este deploy no existen en el servidor.
+- (2026-09-21) "Presupuesto rapido" en la OT (INGRESADO / EN_DIAGNOSTICO /
+  PRESUPUESTADO): un toque arma el presupuesto con los items cargados y lo manda
+  por WhatsApp con el link de aprobacion. Mas: "Cobranzas" pasa a llamarse
+  "Cuenta corriente" y lista deudores, saldos a favor y clientes al dia.
+- (2026-09-21) Icono nuevo (auto + llave inglesa, indigo) e imagenes de arranque
+  regeneradas; iconos ?v=4. El aviso "hay una actualizacion" ya existia y se
+  dispara solo en las instalaciones que tengan esta version o una posterior.
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,

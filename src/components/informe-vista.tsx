@@ -1,6 +1,9 @@
 import type { InformeOT, ItemInforme } from "@/lib/informe";
 import { pesos } from "@/lib/formato";
 import { resumenPedidos } from "@/lib/pedidos";
+import { AprobarPresupuesto } from "@/components/aprobar-presupuesto";
+import { BotonHacerPago } from "@/components/boton-hacer-pago";
+import { FotosInforme } from "@/components/fotos-informe";
 
 const ZONA = "America/Argentina/Buenos_Aires";
 const fechaCorta = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "long", timeZone: ZONA });
@@ -15,7 +18,7 @@ const fechaHora = new Intl.DateTimeFormat("es-AR", {
 export const MENSAJES_ESTADO: Record<string, { titulo: string; detalle: string }> = {
   INGRESADO: { titulo: "Recibimos tu vehículo", detalle: "Ya está en el taller. Pronto empezamos a revisarlo." },
   EN_DIAGNOSTICO: { titulo: "Lo estamos revisando", detalle: "Estamos buscando qué necesita para dejarlo perfecto." },
-  PRESUPUESTADO: { titulo: "Te enviamos el presupuesto", detalle: "Mirá el detalle abajo y avisanos por WhatsApp si lo aprobás." },
+  PRESUPUESTADO: { titulo: "Te enviamos el presupuesto", detalle: "Mirá el detalle abajo y aprobalo con un toque." },
   APROBADO: { titulo: "Presupuesto aprobado", detalle: "Ya está aprobado: lo ponemos en la cola de reparación." },
   EN_EJECUCION: { titulo: "En reparación", detalle: "Estamos trabajando en tu vehículo." },
   TERMINADO: { titulo: "¡Listo para retirar!", detalle: "Terminamos el trabajo. Podés pasar a buscarlo cuando quieras." },
@@ -182,6 +185,10 @@ export function InformeOTVista({ informe }: { informe: InformeOT }) {
         )}
       </section>
 
+      {informe.presupuestoPorAprobar && (
+        <AprobarPresupuesto token={informe.token} presupuesto={informe.presupuestoPorAprobar} />
+      )}
+
       {pedidos === "ESPERANDO" && (
         <section className="rounded-3xl border border-alerta/30 bg-alerta-suave p-5">
           <h2 className="text-[15px] font-extrabold text-alerta">Esperando repuesto</h2>
@@ -219,7 +226,10 @@ export function InformeOTVista({ informe }: { informe: InformeOT }) {
         </section>
       )}
 
+      <FotosInforme fotos={informe.fotos} />
+
       {informe.estado !== "CANCELADA" && <TarjetaImportes total={informe.total} pagado={informe.pagado} saldo={informe.saldo} />}
+      {informe.estado !== "CANCELADA" && <BotonHacerPago saldo={informe.saldo} cobro={informe.cobro} />}
 
       <section className="rounded-3xl border border-borde bg-superficie p-5">
         <h2 className="text-[16px] font-extrabold tracking-tight text-foreground">Novedades</h2>

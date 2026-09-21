@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MENSAJES_ESTADO, Progreso, TarjetaImportes } from "@/components/informe-vista";
 import { cargarInformeCliente } from "@/lib/informe";
+import { BotonHacerPago } from "@/components/boton-hacer-pago";
 import { pesos } from "@/lib/formato";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,7 @@ export default async function PaginaInformeCliente({ params }: { params: Promise
       </section>
 
       {informe.ots.length > 0 && <TarjetaImportes total={informe.total} pagado={informe.pagado} saldo={informe.saldo} />}
+      <BotonHacerPago saldo={informe.saldo} cobro={informe.cobro} />
 
       {informe.ots.length === 0 && (
         <p className="rounded-3xl border border-borde bg-superficie p-6 text-center text-[14px] text-mutado">

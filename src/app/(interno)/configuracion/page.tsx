@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
 import { hoyEnArgentina, obtenerConfigHorarios } from "@/lib/horarios";
+import { FormularioDatosCobro } from "@/components/formulario-datos-cobro";
+import { obtenerDatosCobro } from "@/lib/datos-cobro";
 import { FormularioHorarios } from "@/components/formulario-horarios";
 
 export const metadata: Metadata = { title: "Horarios de atención" };
 
 export default async function PaginaConfiguracion() {
-  const config = await obtenerConfigHorarios();
+  const [config, cobro] = await Promise.all([obtenerConfigHorarios(), obtenerDatosCobro()]);
 
   return (
     <section>
@@ -15,6 +17,7 @@ export default async function PaginaConfiguracion() {
         descripcion="Cargá las horas exactas de cada día (ej: martes 10:00, 12:00 y 15:00). Solo esas puede elegir el cliente en el portal."
       />
       <FormularioHorarios config={config} hoy={hoyEnArgentina()} />
+      <FormularioDatosCobro datos={cobro} />
     </section>
   );
 }
