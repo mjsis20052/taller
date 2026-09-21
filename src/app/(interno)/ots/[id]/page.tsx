@@ -10,6 +10,8 @@ import { BotonAgregarRepuesto } from "@/components/boton-agregar-repuesto";
 import { FormularioPagoOT } from "@/components/formulario-pago-ot";
 import { alternarRepuestoAPedir, eliminarItemOT } from "@/app/(interno)/ots/actions";
 import { eliminarPagoOT } from "@/app/(interno)/cobranzas/actions";
+import { BotonQuitarConfirmando } from "@/components/boton-quitar-confirmando";
+import { saldoCliente } from "@/lib/cuenta-corriente";
 
 const ETIQUETAS_ESTADO: Record<string, string> = {
   TURNO_AGENDADO: "Turno agendado",
@@ -75,8 +77,9 @@ export default async function PaginaDetalleOT({
   const puedeEditarItems = EDITABLE.has(ot.estado);
   const trabajos = ot.items.filter((i) => i.tipo === "MANO_OBRA");
   const repuestos = ot.items.filter((i) => i.tipo === "REPUESTO");
-  const pagado = ot.cobros.reduce((acc, c) => acc + Number(c.monto), 0);
+  const pagado = ot.cobros.reduce((acc, c) => acc + (c.concepto === "DEVOLUCION" ? -Number(c.monto) : Number(c.monto)), 0);
   const saldoOT = Number(ot.total) - pagado;
+  const saldoDelCliente = await saldoCliente(ot.cliente.id);
   const mensajeWhatsapp = mensajeSegunEstado(ot.estado, ot.numero, ot.cliente.nombre);
 
   return (
@@ -153,7 +156,14 @@ export default async function PaginaDetalleOT({
                     <span className="text-[14.5px] font-bold text-foreground">
                       ${Number(item.precioUnitario).toLocaleString("es-AR")}
                     </span>
-                    {puedeEditarItems && <BotonQuitarItem itemId={item.id} otId={ot.id} />}
+                    {puedeEditarItems && (
+                      <BotonQuitarItem
+                        itemId={item.id}
+                        otId={ot.id}
+                        titulo="¿Quitar este trabajo?"
+                        detalle={`${item.descripcion} (${formatearPesos(item.precioUnitario)}). Baja el total de la OT y lo que debe el cliente.`}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -184,7 +194,14 @@ export default async function PaginaDetalleOT({
                     <span className="text-[14.5px] font-bold text-foreground">
                       ${(Number(item.cantidad) * Number(item.precioUnitario)).toLocaleString("es-AR")}
                     </span>
-                    {puedeEditarItems && <BotonQuitarItem itemId={item.id} otId={ot.id} />}
+                    {puedeEditarItems && (
+                      <BotonQuitarItem
+                        itemId={item.id}
+                        otId={ot.id}
+                        titulo="¿Quitar este repuesto?"
+                        detalle={`${item.descripcion} (${Number(item.cantidad)} × ${formatearPesos(item.precioUnitario)}). Baja el total de la OT${item.repuestoId ? " y vuelve al stock" : ""}.`}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -250,10 +267,14 @@ export default async function PaginaDetalleOT({
                   <p className="text-[13.5px] font-medium text-foreground">
                     <span
                       className={`mr-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                        cobro.concepto === "SENA" ? "bg-primario-suave text-primario" : "bg-exito-suave text-exito"
+                        cobro.concepto === "SENA"
+                          ? "bg-primario-suave text-primario"
+                          : cobro.concepto === "DEVOLUCION"
+                            ? "bg-peligro-suave text-peligro"
+                            : "bg-exito-suave text-exito"
                       }`}
                     >
-                      {cobro.concepto === "SENA" ? "Seña" : "Pago"}
+                      {cobro.concepto === "SENA" ? "Seña" : cobro.concepto === "DEVOLUCION" ? "Devolución" : "Pago"}
                     </span>
                     {cobro.metodo ?? "Sin especificar"}
                   </p>
@@ -267,22 +288,36 @@ export default async function PaginaDetalleOT({
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="text-[14.5px] font-bold text-foreground">{formatearPesos(cobro.monto)}</span>
-                  <form action={eliminarPagoOT.bind(null, cobro.id, ot.id)}>
-                    <button type="submit" className="text-[15px] text-peligro" aria-label="Eliminar pago">
-                      ×
-                    </button>
-                  </form>
+                  <BotonQuitarConfirmando
+                    accion={eliminarPagoOT.bind(null, cobro.id, ot.id)}
+                    titulo="¿Borrar este pago?"
+                    detalle={`${formatearPesos(cobro.monto)} · ${cobro.metodo ?? "sin especificar"}. Se saca de la cuenta del cliente y de la caja.`}
+                    textoConfirmar="Sí, borrar"
+                    etiqueta="Eliminar pago"
+                  />
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {ot.estado !== "CANCELADA" && (
+        {(ot.estado !== "CANCELADA" || pagado > 0) && (
           <div className="mt-3">
-            <FormularioPagoOT otId={ot.id} saldo={Math.max(saldoOT, 0)} />
+            <FormularioPagoOT otId={ot.id} saldo={Math.max(saldoOT, 0)} puedeDevolver={pagado > 0} />
           </div>
         )}
+
+        <Link
+          href={`/clientes/${ot.cliente.id}#cuenta`}
+          className="mt-3 flex items-center justify-between rounded-xl border border-borde bg-superficie px-4 py-3 text-[13.5px]"
+        >
+          <span className="text-mutado">Cuenta corriente de {ot.cliente.nombre.split(" ")[0]}</span>
+          <span
+            className={`font-bold ${saldoDelCliente > 0 ? "text-alerta" : saldoDelCliente < 0 ? "text-exito" : "text-foreground"}`}
+          >
+            {saldoDelCliente > 0 ? `Debe ${formatearPesos(saldoDelCliente)}` : saldoDelCliente < 0 ? `A favor ${formatearPesos(-saldoDelCliente)}` : "Al día"} ›
+          </span>
+        </Link>
       </section>
 
       <section className="mb-8">
@@ -322,13 +357,24 @@ function formatearPesos(valor: number | { toString(): string }): string {
   return `$${Number(valor).toLocaleString("es-AR")}`;
 }
 
-function BotonQuitarItem({ itemId, otId }: { itemId: string; otId: string }) {
+function BotonQuitarItem({
+  itemId,
+  otId,
+  titulo,
+  detalle,
+}: {
+  itemId: string;
+  otId: string;
+  titulo: string;
+  detalle: string;
+}) {
   return (
-    <form action={eliminarItemOT.bind(null, itemId, otId)}>
-      <button type="submit" className="text-[15px] text-peligro" aria-label="Quitar">
-        ×
-      </button>
-    </form>
+    <BotonQuitarConfirmando
+      accion={eliminarItemOT.bind(null, itemId, otId)}
+      titulo={titulo}
+      detalle={detalle}
+      etiqueta="Quitar"
+    />
   );
 }
 

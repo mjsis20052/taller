@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Drawer } from "vaul";
 import { FormularioTurno } from "@/components/formulario-turno";
 import { crearTurno } from "@/app/(interno)/agenda/actions";
@@ -22,6 +22,8 @@ export function TurnosRapidos({
 }) {
   const [abierto, setAbierto] = useState(false);
   const [hora, setHora] = useState("");
+  const [cliente, setCliente] = useState<string | null>(null);
+  const alCambiarCliente = useCallback((nombre: string | null) => setCliente(nombre), []);
 
   function abrir(horaElegida: string) {
     setHora(horaElegida);
@@ -75,15 +77,21 @@ export function TurnosRapidos({
               <Drawer.Title className="text-[19px] font-bold tracking-tight text-foreground">
                 {hora ? `Turno a las ${hora}` : "Turno especial"}
               </Drawer.Title>
-              <Drawer.Description className="mt-1 text-[13.5px] capitalize text-mutado">
+              <Drawer.Description className="mt-1 text-[13.5px] text-mutado first-letter:uppercase">
                 {etiquetaFecha}
               </Drawer.Description>
+              {cliente && (
+                <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primario-suave px-3 py-1 text-[13.5px] font-bold text-primario">
+                  Para {cliente}
+                </p>
+              )}
               <div className="mt-5">
                 <FormularioTurno
                   key={`${fecha}-${hora}`}
                   accion={crearTurno}
                   textoBoton="Agendar turno"
                   valoresIniciales={{ motivo: "", fecha, hora, duracionMin }}
+                  alCambiarCliente={alCambiarCliente}
                 />
               </div>
             </div>

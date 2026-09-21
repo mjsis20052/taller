@@ -24,6 +24,7 @@ export function FormularioTurno({
   clienteInicial,
   vehiculoIdInicial,
   valoresIniciales,
+  alCambiarCliente,
 }: {
   accion: (
     estadoPrevio: ErroresFormularioTurno,
@@ -38,6 +39,7 @@ export function FormularioTurno({
     hora: string;
     duracionMin: number;
   };
+  alCambiarCliente?: (nombre: string | null) => void;
 }) {
   const [errores, ejecutarAccion, enviando] = useActionState(accion, {});
 
@@ -46,6 +48,7 @@ export function FormularioTurno({
   const [resultados, setResultados] = useState<ClienteSeleccionado[]>([]);
   const [buscando, setBuscando] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listaResultados = useRef<HTMLDivElement>(null);
 
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [vehiculoId, setVehiculoId] = useState(vehiculoIdInicial ?? "");
@@ -57,6 +60,14 @@ export function FormularioTurno({
   useEffect(() => {
     listarServiciosFrecuentes().then(setServicios);
   }, []);
+
+  useEffect(() => {
+    alCambiarCliente?.(cliente?.nombre ?? null);
+  }, [cliente, alCambiarCliente]);
+
+  useEffect(() => {
+    if (resultados.length > 0) listaResultados.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [resultados]);
 
   useEffect(() => {
     if (!cliente) return;
@@ -113,7 +124,7 @@ export function FormularioTurno({
             />
             {buscando && <p className="mt-1.5 text-[12.5px] text-mutado">Buscando…</p>}
             {resultados.length > 0 && (
-              <div className="mt-1.5 space-y-1.5">
+              <div ref={listaResultados} className="mt-1.5 space-y-1.5">
                 {resultados.map((c) => (
                   <button
                     key={c.id}

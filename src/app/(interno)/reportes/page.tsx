@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { EncabezadoPagina } from "@/components/encabezado-pagina";
-import { listarDeudores } from "@/lib/cuenta-corriente";
+import { resumenDeuda } from "@/lib/cuenta-corriente";
+import { montoFirmado } from "@/lib/formato";
 import { EstadoOT } from "@/generated/prisma/enums";
 
 export const metadata: Metadata = { title: "Reportes" };
@@ -10,7 +11,7 @@ export default async function PaginaReportes() {
   const ahora = new Date();
   const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
 
-  const [otsDelMes, cobrosDelMes, gastosDelMes, repuestosActivos, deudores, otsRecientes] =
+  const [otsDelMes, cobrosDelMes, gastosDelMes, repuestosActivos, deuda, otsRecientes] =
     await Promise.all([
       prisma.ordenTrabajo.findMany({
         where: {
@@ -19,10 +20,10 @@ export default async function PaginaReportes() {
         },
         select: { total: true },
       }),
-      prisma.cobro.findMany({ where: { fecha: { gte: inicioMes } }, select: { monto: true } }),
+      prisma.cobro.findMany({ where: { fecha: { gte: inicioMes } }, select: { monto: true, concepto: true } }),
       prisma.gasto.findMany({ where: { fecha: { gte: inicioMes } }, select: { monto: true } }),
       prisma.repuesto.findMany({ where: { activo: true }, select: { stock: true, stockMinimo: true } }),
-      listarDeudores(),
+      resumenDeuda(),
       prisma.ordenTrabajo.findMany({
         where: { estado: { in: [EstadoOT.ENTREGADO, EstadoOT.FACTURADO] } },
         include: {
@@ -36,9 +37,9 @@ export default async function PaginaReportes() {
 
   const repuestosBajos = repuestosActivos.filter((r) => r.stock <= r.stockMinimo).length;
   const ventasDelMes = otsDelMes.reduce((acc, ot) => acc + Number(ot.total), 0);
-  const cobradoDelMes = cobrosDelMes.reduce((acc, c) => acc + Number(c.monto), 0);
+  const cobradoDelMes = cobrosDelMes.reduce((acc, c) => acc + montoFirmado(c), 0);
   const gastadoDelMes = gastosDelMes.reduce((acc, g) => acc + Number(g.monto), 0);
-  const totalAdeudado = deudores.reduce((acc, d) => acc + d.deuda, 0);
+  const totalAdeudado = deuda.total;
 
   return (
     <section>

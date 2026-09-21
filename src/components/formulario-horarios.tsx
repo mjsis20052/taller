@@ -163,7 +163,7 @@ export function FormularioHorarios({ config, hoy }: { config: ConfigHorarios; ho
         {especiales.map((dia) => (
           <div key={dia.fecha} className="rounded-2xl border border-borde bg-superficie p-4">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[15px] font-semibold capitalize text-foreground">{etiquetaFecha(dia.fecha)}</p>
+              <p className="text-[15px] font-semibold first-letter:uppercase text-foreground">{etiquetaFecha(dia.fecha)}</p>
               <button
                 type="button"
                 onClick={() => setEspeciales((prev) => prev.filter((e) => e.fecha !== dia.fecha))}

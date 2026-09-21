@@ -59,6 +59,12 @@ const IconoHorarios: Icono = (p) => (
     <path d="M12 7v5l3.2 2" />
   </svg>
 );
+const IconoCaja: Icono = (p) => (
+  <svg viewBox="0 0 24 24" {...base} {...p}>
+    <rect x="3" y="7" width="18" height="12" rx="2.5" />
+    <path d="M7 7V5.5A1.5 1.5 0 0 1 8.5 4h7A1.5 1.5 0 0 1 17 5.5V7M3 12h18M11 12v2h2v-2" />
+  </svg>
+);
 const IconoSalir: Icono = (p) => (
   <svg viewBox="0 0 24 24" {...base} {...p}>
     <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l4 4-4 4M19 12H9" />
@@ -66,6 +72,7 @@ const IconoSalir: Icono = (p) => (
 );
 
 const APPS: { href: string; etiqueta: string; Icono: Icono; color: string }[] = [
+  { href: "/caja", etiqueta: "Caja", Icono: IconoCaja, color: "from-lime-500 to-green-600" },
   { href: "/clientes", etiqueta: "Clientes", Icono: IconoClientes, color: "from-indigo-500 to-violet-500" },
   { href: "/vehiculos", etiqueta: "Vehículos", Icono: IconoVehiculos, color: "from-sky-500 to-blue-600" },
   { href: "/stock", etiqueta: "Stock", Icono: IconoStock, color: "from-amber-400 to-orange-500" },

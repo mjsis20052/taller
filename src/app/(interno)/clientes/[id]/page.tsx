@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { SeccionVehiculosCliente } from "@/components/seccion-vehiculos-cliente";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { cuentaCliente } from "@/lib/cuenta-corriente";
+import { SeccionCuentaCliente } from "@/components/seccion-cuenta-cliente";
+import { pesos } from "@/lib/formato";
 import { cambiarActivoCliente } from "@/app/(interno)/clientes/actions";
 
 const ETIQUETAS_CONDICION_FISCAL: Record<string, string> = {
@@ -48,6 +51,8 @@ export default async function PaginaDetalleCliente({
 
   if (!cliente) notFound();
 
+  const cuenta = await cuentaCliente(cliente.id);
+
   return (
     <section>
       <header className="mb-5 flex items-start justify-between gap-3">
@@ -60,6 +65,16 @@ export default async function PaginaDetalleCliente({
             {ETIQUETAS_CONDICION_FISCAL[cliente.condicionFiscal]}
           </p>
         </div>
+        {cuenta.saldo !== 0 && (
+          <a
+            href="#cuenta"
+            className={`shrink-0 rounded-full px-2.5 py-1 text-[12px] font-bold ${
+              cuenta.saldo > 0 ? "bg-alerta-suave text-alerta" : "bg-exito-suave text-exito"
+            }`}
+          >
+            {cuenta.saldo > 0 ? `Debe ${pesos(cuenta.saldo)}` : `A favor ${pesos(-cuenta.saldo)}`}
+          </a>
+        )}
         {!cliente.activo && (
           <span className="shrink-0 rounded-full bg-alerta-suave px-2.5 py-1 text-[11px] font-semibold text-alerta">
             Inactivo
@@ -115,6 +130,8 @@ export default async function PaginaDetalleCliente({
           </button>
         </form>
       </div>
+
+      <SeccionCuentaCliente cuenta={cuenta} />
 
       <SeccionVehiculosCliente clienteId={cliente.id} vehiculos={cliente.vehiculos} />
 

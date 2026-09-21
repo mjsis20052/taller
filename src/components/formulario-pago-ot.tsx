@@ -7,7 +7,7 @@ const estiloInput =
   "w-full rounded-xl border border-borde bg-superficie px-3.5 py-3 text-[14.5px] text-foreground outline-none focus:border-primario";
 const estiloLabel = "mb-1 block text-[12.5px] font-medium text-mutado";
 
-export function FormularioPagoOT({ otId, saldo }: { otId: string; saldo: number }) {
+export function FormularioPagoOT({ otId, saldo, puedeDevolver = false }: { otId: string; saldo: number; puedeDevolver?: boolean }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -32,6 +32,7 @@ export function FormularioPagoOT({ otId, saldo }: { otId: string; saldo: number 
           <select id="pago-concepto" name="concepto" defaultValue="PAGO" className={estiloInput}>
             <option value="SENA">Seña</option>
             <option value="PAGO">Pago</option>
+            {puedeDevolver && <option value="DEVOLUCION">Devolución</option>}
           </select>
         </div>
         <div>

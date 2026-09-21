@@ -55,7 +55,7 @@ export async function HorariosPublico() {
           <ul className="mt-2 space-y-1.5">
             {proximosEspeciales.map(([fecha, horas]) => (
               <li key={fecha} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px]">
-                <span className="font-medium capitalize text-foreground">
+                <span className="font-medium first-letter:uppercase text-foreground">
                   {new Date(`${fecha}T12:00:00`).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
                 </span>
                 {horas.length === 0 ? (

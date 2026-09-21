@@ -483,6 +483,18 @@
   turnos se guardaban 3 h corridos. Ahora las horas se arman con
   -03:00 y el compose del servidor define TZ=America/Argentina/Buenos_Aires.
 
+- (2026-09-21) Cuenta corriente y caja. Saldo del cliente = todo lo
+  cargado en sus OT (menos turnos y canceladas; los trabajos EN CURSO ya
+  suman) menos lo que pagó; una devolucion resta (Cobro.concepto
+  DEVOLUCION). src/lib/cuenta-corriente.ts (cuentaCliente, listarCuentas,
+  resumenDeuda). Cobranzas: clientes con saldo, OT pendientes, cobro con
+  metodo y reparto AUTOMATICO a las OT mas viejas (o a una OT / a cuenta)
+  y devolucion de plata. Detalle del cliente: seccion "Cuenta corriente".
+  Nueva pantalla /caja (hoy / 7 dias / mes): entro, salio (gastos), queda,
+  por metodo y por categoria, movimientos y por cobrar. Reportes usa la
+  misma cuenta. Quitar un trabajo, repuesto o pago pide confirmacion
+  (BotonQuitarConfirmando). Turno rapido/especial muestra "Para <cliente>".
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,
