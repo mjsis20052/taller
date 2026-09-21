@@ -495,6 +495,17 @@
   misma cuenta. Quitar un trabajo, repuesto o pago pide confirmacion
   (BotonQuitarConfirmando). Turno rapido/especial muestra "Para <cliente>".
 
+- (2026-09-21) PWA: iconos nuevos en indigo (llave blanca sobre degrade,
+  generados con next/og; variantes any, maskable y apple-touch) y
+  versionados con ?v=2 en el manifest y el layout para que se vuelvan a
+  bajar. Aviso de actualizacion: cada build tiene un id
+  (NEXT_PUBLIC_BUILD_ID, next.config.ts) y GET /api/version (publico)
+  devuelve el del servidor; src/components/aviso-actualizacion.tsx lo
+  compara cada minuto y al volver a la app, y muestra el modal "Hay una
+  actualizacion" (Actualizar ahora / Mas tarde). Actualizar borra los
+  caches y recarga. iOS guarda el icono al instalar: para verlo nuevo hay
+  que borrar la app de la pantalla de inicio y volver a agregarla.
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,
