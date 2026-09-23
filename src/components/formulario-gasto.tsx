@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { crearGasto } from "@/app/gastos/actions";
+import { crearGasto } from "@/app/(interno)/gastos/actions";
 
 const estiloInput =
   "w-full rounded-xl border border-borde bg-superficie px-3.5 py-3 text-[15px] text-foreground outline-none focus:border-primario";

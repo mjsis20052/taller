@@ -1,0 +1,121 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { IlustracionAuto } from "@/components/ilustracion-auto";
+import { BotonPedirTurno } from "@/components/boton-pedir-turno";
+import { Engranaje } from "@/components/engranaje";
+
+const subir = {
+  oculto: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay: i * 0.08, ease: "easeOut" as const },
+  }),
+};
+
+export function HeroPublico() {
+  return (
+    <section className="relative overflow-hidden pt-4">
+      {/* blobs decorativos de fondo */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-primario-suave opacity-70 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 top-10 h-64 w-64 rounded-full bg-exito-suave opacity-60 blur-3xl"
+      />
+      <Engranaje className="pointer-events-none absolute -left-10 top-40 h-44 w-44 text-primario/10" segundos={40} />
+      <Engranaje
+        className="pointer-events-none absolute -right-6 bottom-2 h-28 w-28 text-primario/15"
+        segundos={26}
+        sentido={-1}
+      />
+
+      <div className="relative grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="text-center lg:text-left">
+          <motion.span
+            custom={0}
+            initial="oculto"
+            animate="visible"
+            variants={subir}
+            className="inline-block rounded-full bg-primario-suave px-3.5 py-1.5 text-[12.5px] font-semibold text-primario"
+          >
+            Tu taller, a un click
+          </motion.span>
+
+          <motion.h1
+            custom={1}
+            initial="oculto"
+            animate="visible"
+            variants={subir}
+            className="mx-auto mt-5 max-w-[18ch] text-[34px] font-bold leading-[1.1] tracking-tight text-foreground sm:text-[42px] lg:mx-0"
+          >
+            Consultá tu vehículo o pedí un turno, sin llamar
+          </motion.h1>
+
+          <motion.p
+            custom={2}
+            initial="oculto"
+            animate="visible"
+            variants={subir}
+            className="mx-auto mt-4 max-w-[46ch] text-[15.5px] text-mutado lg:mx-0"
+          >
+            Escribí la patente para ver en qué está tu reparación, o pedí un turno online en menos
+            de un minuto.
+          </motion.p>
+
+          <motion.div
+            custom={3}
+            initial="oculto"
+            animate="visible"
+            variants={subir}
+            className="mt-7 flex flex-wrap items-center justify-center gap-3 lg:justify-start"
+          >
+            <a
+              href="#consulta"
+              className="rounded-xl bg-primario px-6 py-3.5 text-[14.5px] font-semibold text-white"
+            >
+              Consultar mi vehículo
+            </a>
+            <BotonPedirTurno className="rounded-xl border border-borde bg-superficie px-6 py-3.5 text-[14.5px] font-semibold text-foreground">
+              Pedir turno
+            </BotonPedirTurno>
+          </motion.div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+          className="relative mx-auto w-full max-w-sm lg:max-w-none"
+        >
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <IlustracionAuto className="w-full drop-shadow-xl" />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.7, ease: "easeOut" }}
+            className="absolute -right-2 top-0 flex items-center gap-2 rounded-2xl border border-borde bg-superficie px-3.5 py-2.5 shadow-lg sm:right-4"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-exito-suave text-exito">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </span>
+            <div className="text-left">
+              <p className="text-[12px] font-semibold leading-tight text-foreground">Turno confirmado</p>
+              <p className="text-[10.5px] leading-tight text-mutado">por WhatsApp</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}

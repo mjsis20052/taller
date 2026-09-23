@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
-import type { ErroresFormularioVehiculo } from "@/app/vehiculos/actions";
+import { useActionState, useState } from "react";
+import type { ErroresFormularioVehiculo } from "@/app/(interno)/vehiculos/actions";
+import { CamposOpcionales } from "@/components/campos-opcionales";
 
 type VehiculoExistente = {
   patente: string;
@@ -31,6 +32,15 @@ export function FormularioVehiculo({
 }) {
   const [errores, ejecutarAccion, enviando] = useActionState(accion, {});
 
+  // Los campos se guardan en estado: si el envío falla (por ejemplo patente repetida)
+  // el formulario no se reinicia y no se pierde lo que ya se escribió.
+  const [patente, setPatente] = useState(vehiculo?.patente ?? "");
+  const [marca, setMarca] = useState(vehiculo?.marca ?? "");
+  const [modelo, setModelo] = useState(vehiculo?.modelo ?? "");
+  const [anio, setAnio] = useState(vehiculo?.anio ? String(vehiculo.anio) : "");
+  const [color, setColor] = useState(vehiculo?.color ?? "");
+  const [vin, setVin] = useState(vehiculo?.vin ?? "");
+
   return (
     <form action={ejecutarAccion} className="space-y-5">
       <div>
@@ -42,10 +52,13 @@ export function FormularioVehiculo({
           name="patente"
           required
           autoFocus={!vehiculo}
-          defaultValue={vehiculo?.patente}
+          value={patente}
+          onChange={(e) => setPatente(e.target.value)}
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
           className={`${estiloInput} uppercase`}
-          placeholder="AB123CD"
-          maxLength={7}
+          placeholder="La que sea (AB123CD, 123ABC…)"
         />
         {errores.patente && <p className={estiloError}>{errores.patente}</p>}
       </div>
@@ -59,7 +72,8 @@ export function FormularioVehiculo({
             id="marca"
             name="marca"
             required
-            defaultValue={vehiculo?.marca}
+            value={marca}
+            onChange={(e) => setMarca(e.target.value)}
             className={estiloInput}
             placeholder="Ford"
           />
@@ -73,7 +87,8 @@ export function FormularioVehiculo({
             id="modelo"
             name="modelo"
             required
-            defaultValue={vehiculo?.modelo}
+            value={modelo}
+            onChange={(e) => setModelo(e.target.value)}
             className={estiloInput}
             placeholder="Fiesta"
           />
@@ -81,47 +96,55 @@ export function FormularioVehiculo({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={estiloLabel} htmlFor="anio">
-            Año
-          </label>
-          <input
-            id="anio"
-            name="anio"
-            inputMode="numeric"
-            defaultValue={vehiculo?.anio ?? ""}
-            className={estiloInput}
-            placeholder="2018"
-          />
-          {errores.anio && <p className={estiloError}>{errores.anio}</p>}
+      <CamposOpcionales
+        etiqueta="Año, color, VIN…"
+        abiertoInicial={Boolean(vehiculo?.anio || vehiculo?.color || vehiculo?.vin)}
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={estiloLabel} htmlFor="anio">
+              Año
+            </label>
+            <input
+              id="anio"
+              name="anio"
+              inputMode="numeric"
+              value={anio}
+              onChange={(e) => setAnio(e.target.value)}
+              className={estiloInput}
+              placeholder="2018"
+            />
+            {errores.anio && <p className={estiloError}>{errores.anio}</p>}
+          </div>
+          <div>
+            <label className={estiloLabel} htmlFor="color">
+              Color
+            </label>
+            <input
+              id="color"
+              name="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className={estiloInput}
+              placeholder="opcional"
+            />
+          </div>
         </div>
+
         <div>
-          <label className={estiloLabel} htmlFor="color">
-            Color
+          <label className={estiloLabel} htmlFor="vin">
+            VIN / N° de chasis
           </label>
           <input
-            id="color"
-            name="color"
-            defaultValue={vehiculo?.color ?? ""}
+            id="vin"
+            name="vin"
+            value={vin}
+            onChange={(e) => setVin(e.target.value)}
             className={estiloInput}
             placeholder="opcional"
           />
         </div>
-      </div>
-
-      <div>
-        <label className={estiloLabel} htmlFor="vin">
-          VIN / N° de chasis
-        </label>
-        <input
-          id="vin"
-          name="vin"
-          defaultValue={vehiculo?.vin ?? ""}
-          className={estiloInput}
-          placeholder="opcional"
-        />
-      </div>
+      </CamposOpcionales>
 
       <button
         type="submit"

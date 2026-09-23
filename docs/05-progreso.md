@@ -1,10 +1,19 @@
 # Progreso del proyecto
 
+## ⚠️ LEER ANTES DE DESPLEGAR: este sistema NO TIENE LOGIN. Ninguna
+## ruta del panel interno pide contraseña — quien tenga la URL entra
+## y ve todo (clientes, teléfonos, totales de OT, cobranzas). Hasta
+## ahora esto no importaba porque solo corría en localhost. Ahora que
+## existe /portal (landing pública) pensada para internet, el panel
+## de gestión NO puede quedar detrás de la misma URL pública sin
+## alguna forma de login — aunque sea básico (un solo usuario, no
+## hace falta roles). Ver nota completa en "Landing pública" abajo.
+
 ## Fase actual: FASES 1 a 4 COMPLETAS. FASE 5 deliberadamente NO
 ## implementada (el PRD pide solo diseñar puntos de enganche: OCR,
 ## dictado, WhatsApp Business API, API real del estudio).
-## Tarea actual: ninguna pendiente en el roadmap original. Queda a
-## criterio del dueño qué pulir o si hace falta algo más.
+## Tarea actual: ninguna pendiente en el roadmap original. Antes de
+## desplegar en el VPS de compromiso, resolver el login (ver arriba).
 
 ## Hecho
 - [x] Sesión fundacional: documentación completa creada
@@ -304,6 +313,300 @@
   resolución de iPhone/iPad). iOS 16.4+ arma una pantalla de carga
   básica sola a partir del manifest (background_color + ícono), así
   que no debería verse roto, pero no es una splash a medida.
+
+- (Estructura) Todas las rutas del panel de gestión se movieron a
+  src/app/(interno)/ — un "route group" de Next.js, no cambia
+  ninguna URL (/clientes sigue siendo /clientes). Se hizo para poder
+  meter la landing pública en su propio grupo con su propio layout
+  (sin el header/nav del panel), sin que se pisen entre sí. El
+  layout raíz (src/app/layout.tsx) quedó como shell mínimo (html/
+  body/fuentes); el header, la nav inferior y las alertas se movieron
+  a src/app/(interno)/layout.tsx. Se aprovechó para ensanchar el
+  panel en pantallas grandes (max-w-4xl en vez de max-w-lg).
+- (Panel para PC) /stock tiene un formulario de "carga rápida" arriba
+  de la lista: guarda y se queda en la misma pantalla (en vez de ir
+  al detalle) para poder cargar repuestos uno atrás de otro sin
+  interrupciones — pensado para tipear rápido con teclado. Además la
+  lista se ve como tabla en pantallas grandes (lg:) y como tarjetas
+  en mobile, mismo patrón que se puede repetir en otras listas si
+  hace falta más adelante.
+- (Mobile más simple) Formularios de Cliente y Vehículo: los campos
+  secundarios quedan detrás de un "+ Más datos" colapsable
+  (src/components/campos-opcionales.tsx). Alta rápida en mobile:
+  Nombre+Teléfono (cliente) o Patente+Marca+Modelo (vehículo). Si el
+  registro que se edita ya tiene esos datos opcionales cargados, la
+  sección arranca abierta para no esconder información existente.
+- (Landing pública) src/app/(publico)/portal/ — nueva sección SIN
+  LOGIN, con su propio layout (sin el header/nav del panel interno):
+  - /portal: hero animado con framer-motion + consulta de vehículo
+    por patente. A propósito devuelve lo mínimo: patente, marca,
+    modelo y el estado en lenguaje simple ("listo para retirar",
+    etc.) — NUNCA nombre, teléfono, DNI/CUIT, fotos ni montos.
+    Conocer una patente no debería alcanzar para saber quién es el
+    dueño ni cuánto pagó.
+  - /portal/turno: pedido de turno público. Busca o crea el cliente
+    por teléfono y el vehículo por patente; si la patente ya
+    pertenece a otro cliente, NO se reasigna — se usa el vehículo tal
+    cual está, sin tocar su dueño (evita que alguien "robe" la
+    asignación de un auto adivinando la patente). El turno se crea
+    directo en AGENDADO, sin paso de confirmación previo — no hay
+    CAPTCHA ni verificación por SMS/email: para el tamaño de este
+    negocio agregar eso sería sobre-ingeniería, pero significa que
+    un pedido falso/de prueba entra igual que uno real (se cancela
+    fácil desde la Agenda si pasa).
+  - Como no existe integración con la API de WhatsApp Business (Fase
+    5), la "confirmación por WhatsApp" que se promete en la pantalla
+    de éxito la hace el DUEÑO a mano: los turnos que vienen del
+    portal se marcan (src/lib/turno-portal.ts) con un badge "Pedido
+    web" en la Agenda y un botón "Confirmar por WhatsApp" que abre
+    wa.me con el mensaje ya armado — un toque y listo, no hay que
+    escribir nada. El marcador técnico del motivo se limpia antes de
+    mostrarlo en cualquier pantalla (Agenda, editar turno, alta de
+    OT desde turno).
+  - **Riesgo real, no resuelto**: el panel interno completo (clientes,
+    teléfonos, totales de OT, cobranzas) sigue sin ningún login. Deployar
+    ambas cosas (portal público + panel interno) bajo el mismo dominio
+    público tal cual está hoy dejaría todos los datos del negocio
+    abiertos a cualquiera con la URL. Antes de desplegar en el VPS de
+    compromiso hay que decidir cómo proteger `(interno)` — lo más
+    simple: una sola contraseña compartida (matcheable con un
+    middleware de Next y una cookie), sin necesidad de un sistema de
+    usuarios completo dado que sigue siendo un solo dueño. No se
+    implementó porque no se pidió explícitamente y agregarlo sin
+    acuerdo hubiera sido una decisión de seguridad tomada por mi
+    cuenta — se las dejo planteada para decidir antes del despliegue.
+  - Tampoco se tocó el proyecto `compromiso-main` (el "diario") ni se
+    investigaron los datos del VPS mencionados — el pedido explícito
+    fue terminar esto primero y desplegar después, así que no entré
+    a ese proyecto todavía.
+
+- (Portal, ajustes tras uso real) El dueño probó el formulario público
+  con su propio teléfono/patente reales y la validación estricta
+  (formato internacional +54... / patente AAA123-AA123BB) los
+  rechazaba. Se sacó esa validación específicamente del portal
+  público — ahí ahora solo se pide que no estén vacíos, se normaliza
+  (mayúsculas, sin espacios/guiones) y listo. La validación estricta
+  SIGUE existiendo para el panel interno (src/lib/validaciones/), no
+  se tocó ahí.
+- (Portal) Horarios de atención configurables: nueva pantalla
+  /configuracion (Más → "Horarios de atención") donde el dueño define
+  apertura, cierre, duración de cada turno y qué días está cerrado
+  (guardado en el modelo Config, clave "horarios_turnos" —
+  src/lib/horarios.ts). El selector de horario del portal público ya
+  no es un campo de hora libre: es un <select> con los horarios que
+  salen de esa config, sacando los que ya están ocupados y los que ya
+  pasaron si la fecha es hoy. Se revalida en el servidor al enviar
+  (no alcanza con lo que mande el navegador).
+- (Portal) BUG real encontrado por el dueño: los pedidos de turno del
+  portal se guardaban bien pero no eran visibles a simple vista — la
+  Agenda por defecto muestra el día de hoy, y el pedido puede ser
+  para cualquier fecha futura. Se agregó una alerta en la campanita
+  ("N pedidos de turno desde la web sin confirmar") que linkea a
+  /agenda?vista=lista, contando turnos AGENDADO cuyo motivo todavía
+  tiene la marca de portal. Y como tocar "Confirmar por WhatsApp"
+  antes no dejaba ningún rastro (la alerta iba a quedar para
+  siempre), ahora también saca la marca del motivo al confirmar
+  (confirmarPedidoWeb en agenda/actions.ts) — se probó que el
+  contador de la campanita baja de verdad después de confirmar.
+- (Diagnóstico de red) El dueño no podía abrir la app desde el
+  celular con la IP que le había pasado (172.25.208.1) — es la IP de
+  un adaptador virtual de WSL/Hyper-V, no existe fuera de esta
+  máquina. La IP real de la placa Wi-Fi es otra (verificar con
+  `Get-NetIPAddress` — la de `InterfaceAlias "Wi-Fi"`, no la de
+  `vEthernet (WSL...)`). De paso quedó anotado algo raro en el
+  firewall de Windows: hay reglas para "Node.js JavaScript Runtime"
+  que BLOQUEAN entrante en redes "Privadas" y lo PERMITEN en
+  "Públicas" (al revés de lo esperable) — hoy no importa porque la
+  red de este equipo está categorizada como Pública, pero si en
+  algún momento Windows la recategoriza como Privada, la app va a
+  dejar de ser alcanzable desde el celular otra vez y va a hacer
+  falta revisar esas reglas (`Get-NetFirewallRule -DisplayName
+  "*node*"`).
+- (Landing) Se agregó una ilustración vectorial propia de un auto
+  (src/components/ilustracion-auto.tsx, con flotación suave vía
+  framer-motion) y una sección de 3 features con scroll-reveal —
+  a propósito NO son fotos del taller real ni fotos de stock
+  genéricas haciéndose pasar por el negocio; son placeholders fáciles
+  de reemplazar el día que haya fotos de verdad.
+- (Portal) "Pedir turno" ahora abre un modal (bottom sheet con Vaul)
+  en vez de navegar a /portal/turno — se puede pedir el turno sin
+  perder el lugar en la landing, desde el header, el hero o el banner
+  final (src/components/boton-pedir-turno.tsx, reutiliza el mismo
+  FormularioTurnoPublico de siempre). La página /portal/turno se dejó
+  intacta como acceso directo por si alguien llega a esa URL.
+
+- (Horarios) Ahora cada día de la semana tiene sus horas EXACTAS
+  (ej: martes 10:00, 12:00 y 15:00) en /configuracion, como etiquetas
+  que se agregan y quitan; un día sin horas queda cerrado. El portal
+  ofrece solo esas (src/lib/horarios.ts + horarios-comunes.ts). La
+  config vieja (apertura/cierre/duración) se convierte sola al leerla.
+  La landing muestra los horarios reales en "Cuándo atendemos".
+- (Agenda) Sección "Turnos por confirmar" arriba de todo con los
+  pedidos de la web (no se repiten en la lista de abajo); la campanita
+  linkea a /agenda#por-confirmar.
+- (Teléfonos) Al cargar clientes (panel y portal) el +549 se agrega
+  solo: "2245506078" queda "+5492245506078" (normalizarTelefono en
+  src/lib/validaciones/telefono.ts). El wa.me de confirmación usa ese
+  número.
+- (OT) Rediseño de ítems. Los "trabajos" (TipoOTItem.MANO_OBRA en la
+  base, "Diagnóstico y trabajos" en pantalla) tienen falla encontrada +
+  solución propuesta + precio (OTItem.falla; descripcion = solución;
+  cantidad 1). Los repuestos se agregan con el botón "Agregar
+  repuesto": de la lista de stock (descuenta) o uno nuevo con precio
+  (libre, sin stock), con casilla "hay que pedirlo" y nota de cómo
+  pedirlo (OTItem.aPedir / notaPedido), y se puede marcar "ya pedido".
+- (OT) Sección "Importes y pagos": total, pagado, falta pagar (o saldo
+  a favor) y lista de pagos de ESA OT, con seña o pago parcial en
+  cualquier estado salvo cancelada (Cobro.concepto SENA|PAGO,
+  registrarPagoOT / eliminarPagoOT). Reemplaza el cobro que solo
+  aparecía al entregar. La cuenta corriente del cliente sigue igual:
+  una seña de una OT sin entregar queda como crédito a favor.
+  Migración: 20260918164835_ot_diagnostico_repuestos_pagos.
+- (Landing) Engranajes que giran, cinta de servicios, sección oscura
+  "Lo que hacemos" con ilustraciones vectoriales propias (no son fotos
+  del taller real; reemplazables) y horarios reales.
+
+- (2026-09-20) Agenda: cinta de dias deslizable con burbuja de cantidad
+  de turnos por dia, "Dar un turno rapido" (horarios libres del dia +
+  "turno especial" con hora/duracion libres), dias especiales en
+  /configuracion (feriados o horarios distintos por fecha, tambien
+  visibles en la landing) y disponibilidad real: un horario deja de
+  ofrecerse en el portal apenas un turno lo pisa (src/lib/horarios.ts,
+  horasLibres). "Mas" ahora es una cuadricula de iconos de app; el
+  filtro de OTs se desliza sin barra.
+- (2026-09-20) Rendimiento: se saco la animacion de salida entre
+  pantallas (esperaba ~200 ms en cada cambio), engranajes/login pasan
+  a CSS (framer-motion queda solo en la landing), esqueleto de carga
+  instantaneo (loading.tsx), alertas de la campana sin bloquear el
+  encabezado y con consultas agrupadas en la base.
+- (2026-09-20) BUG de zona horaria: el contenedor corre en UTC y los
+  turnos se guardaban 3 h corridos. Ahora las horas se arman con
+  -03:00 y el compose del servidor define TZ=America/Argentina/Buenos_Aires.
+
+- (2026-09-21) Cuenta corriente y caja. Saldo del cliente = todo lo
+  cargado en sus OT (menos turnos y canceladas; los trabajos EN CURSO ya
+  suman) menos lo que pagó; una devolucion resta (Cobro.concepto
+  DEVOLUCION). src/lib/cuenta-corriente.ts (cuentaCliente, listarCuentas,
+  resumenDeuda). Cobranzas: clientes con saldo, OT pendientes, cobro con
+  metodo y reparto AUTOMATICO a las OT mas viejas (o a una OT / a cuenta)
+  y devolucion de plata. Detalle del cliente: seccion "Cuenta corriente".
+  Nueva pantalla /caja (hoy / 7 dias / mes): entro, salio (gastos), queda,
+  por metodo y por categoria, movimientos y por cobrar. Reportes usa la
+  misma cuenta. Quitar un trabajo, repuesto o pago pide confirmacion
+  (BotonQuitarConfirmando). Turno rapido/especial muestra "Para <cliente>".
+
+- (2026-09-21) PWA: iconos nuevos en indigo (llave blanca sobre degrade,
+  generados con next/og; variantes any, maskable y apple-touch) y
+  versionados con ?v=2 en el manifest y el layout para que se vuelvan a
+  bajar. Aviso de actualizacion: cada build tiene un id
+  (NEXT_PUBLIC_BUILD_ID, next.config.ts) y GET /api/version (publico)
+  devuelve el del servidor; src/components/aviso-actualizacion.tsx lo
+  compara cada minuto y al volver a la app, y muestra el modal "Hay una
+  actualizacion" (Actualizar ahora / Mas tarde). Actualizar borra los
+  caches y recarga. iOS guarda el icono al instalar: para verlo nuevo hay
+  que borrar la app de la pantalla de inicio y volver a agregarla.
+
+- (2026-09-21) Recepcion: si el cliente no esta cargado se crea ahi mismo
+  (nombre + telefono, +549 automatico) y tambien el vehiculo (patente,
+  marca, modelo); si la patente ya existe se usa ese vehiculo y su dueno
+  (o avisa si es de otro cliente). Patente libre: sin formato ni tope de
+  largo (solo mayusculas y sin espacios/guiones). Los formularios de
+  recepcion, vehiculo y pedido de turno del portal guardan cada campo en
+  estado: React 19 reinicia los campos sin estado cuando el envio falla,
+  por eso antes se borraban marca/modelo.
+
+- (2026-09-21) Informes para el cliente. Cada OT y cada cliente tienen
+  un enlace secreto (tokenInforme, 32 hex, generado por la base): la
+  pagina publica /informe/<token> muestra el avance de la reparacion
+  (pasos, que se encontro y que se hizo, repuestos con su estado,
+  importes y novedades) y se actualiza sola cada 30 s;
+  /informe/cliente/<token> es el historial de todos sus trabajos. Solo
+  lleva lo del propio cliente (nunca telefono ni documentos) y tiene
+  noindex. Se comparte por WhatsApp desde la OT, desde Inicio (icono en
+  cada OT activa) y desde Mas > Informes (por cliente: una orden o todo).
+  Quien tenga el link ve el informe: no reenviarlo a terceros.
+- (2026-09-21) Repuestos: estado del pedido A_PEDIR -> PEDIDO -> RECIBIDO
+  (OTItem.estadoPedido). Al pedir o recepcionar queda una novedad en la
+  OT. La OT muestra "Vehiculo esperando repuesto" / "Repuestos
+  recepcionados", igual en Inicio y en la lista, y la campanita avisa los
+  vehiculos que esperan repuesto. "Novedad rapida" en la OT: chips de un
+  toque que publican una linea en el informe y se avisan por WhatsApp.
+- (2026-09-21) Icono de cuenta corriente en el encabezado (billetera con
+  el numero de clientes que deben): abre el detalle de cada deudor (OT,
+  trabajos y repuestos, lo que ya pago) y desde ahi se cobra, se devuelve
+  o se recuerda por WhatsApp (listarDeudoresConDetalle).
+  Migracion: 20260921230000_informes_y_estado_pedido.
+
+- (2026-09-21) Marca: el taller se llama **Car-Mec**. Nombre en el manifest,
+  titulos, encabezados, login, portal e informes; icono plano de un solo
+  color (#6366f1) con monograma "CM" (icons/*.png v=3), pantalla de arranque
+  del mismo color (manifest background_color) y arranques de iOS por tamano
+  en public/splash/ (metadata appleWebApp.startupImage). Dentro de la app
+  instalada hay una animacion de entrada CSS (.splash-inicio, solo con
+  display-mode: standalone). Los PNG se generaron con next/og y la fuente
+  Segoe UI Black del sistema; para regenerarlos hay que repetir ese script.
+- (2026-09-21) WhatsApp sin telefono: todos los envios por WhatsApp pasan
+  por src/components/whatsapp-cliente.tsx; si el cliente no tiene telefono
+  cargado (menos de 8 digitos) se abre un modal que lo pide, lo guarda en
+  la ficha (guardarTelefonoCliente, con +549 automatico) y recien ahi envia.
+
+- (2026-09-21) Informe del cliente: ahora muestra las **fotos** de la OT (ruta
+  publica /informe/foto/<token>/<fotoId>, solo sirve fotos de esa OT; el resto de
+  /uploads sigue tras el login), deja **aprobar o rechazar el presupuesto** con un
+  toque (informe/actions.ts; aprobado -> OT APROBADO + novedad) y tiene el boton
+  **Hacer pago** con el alias/titular/link de Mercado Pago que se cargan en
+  Mas > Horarios > "Datos para cobrar" (tabla Config: cobro_alias, cobro_titular,
+  cobro_link). Sin migracion.
+- (2026-09-21) **Fotos en el servidor**: el contenedor no podia escribir en
+  /app/uploads ni lo guardaba en un volumen (las fotos se perdian al redeploy).
+  Dockerfile crea /app/uploads para el usuario nextjs y el compose del VPS monta
+  el volumen `taller_uploads:/app/uploads` (lo agrega ssh_deploy_mejoras.py).
+  Las fotos sacadas antes de este deploy no existen en el servidor.
+- (2026-09-21) "Presupuesto rapido" en la OT (INGRESADO / EN_DIAGNOSTICO /
+  PRESUPUESTADO): un toque arma el presupuesto con los items cargados y lo manda
+  por WhatsApp con el link de aprobacion. Mas: "Cobranzas" pasa a llamarse
+  "Cuenta corriente" y lista deudores, saldos a favor y clientes al dia.
+- (2026-09-21) Icono nuevo (auto + llave inglesa, indigo) e imagenes de arranque
+  regeneradas; iconos ?v=4. El aviso "hay una actualizacion" ya existia y se
+  dispara solo en las instalaciones que tengan esta version o una posterior.
+
+- (2026-09-21) Inicio: recuadro destacado "Estamos esperando repuestos" con cada
+  OT, sus repuestos por pedir/pedidos y hace cuantos dias. Una OT sale de
+  "Activas" al entregarse (se mantuvo asi a pedido del usuario).
+
+## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
+- Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
+  sin swap), compartido con el diario (compromiso-main, pm2, mongo,
+  qdrant) y con otros proyectos (ej: mascotas).
+- Taller corre en Docker: /opt/taller/app/docker-compose.yml (servicios
+  db + app, límites de RAM 256m/512m, app publicada en el puerto 3010).
+  La clave de la base vive SOLO en ese archivo del servidor.
+- Público: https://taller.compromisodiario.com.ar (Cloudflare con
+  proxy activado + nginx: /etc/nginx/sites-available/taller, con
+  certbot). Solo abren los puertos 80/443: el proveedor bloquea el
+  resto (3010, 8080, 8085… no responden desde afuera).
+- NUNCA compilar (next build / docker build) en el VPS: el 2026-09-18
+  un build se comió la RAM y el servidor quedó colgado ~15 min (cayó
+  también el diario) hasta reiniciarlo desde el panel. Se compila en
+  la PC (Dockerfile multi-stage, output standalone), se sube con
+  `docker save | gzip` + `docker load`, y se recrea el contenedor.
+- Las migraciones de Prisma no van dentro de la imagen: se aplican
+  con el SQL de prisma/migrations directo en el contenedor de la base
+  (y se registran en _prisma_migrations).
+- Login propio (2026-09-18): pantalla /login con cookie firmada
+  (HMAC, 30 días, httpOnly) y src/proxy.ts que cierra todo salvo
+  /portal, /login, /_next, /icons, /sw.js, /manifest.webmanifest y
+  /offline (GET → redirige a /login; otros métodos → 401). Cerrar
+  sesión está en Más. Freno de 8 intentos cada 15 min por IP. Se
+  configura con ADMIN_USER, ADMIN_PASSWORD y SESSION_SECRET en el
+  environment del contenedor (solo en el docker-compose del servidor,
+  nunca en el repo). Sin ADMIN_PASSWORD en desarrollo no se pide nada;
+  en producción sin configurar, el panel queda cerrado. Reemplazó el
+  basic auth de nginx. La clave actual es PROVISORIA y débil
+  (admin/admin): cambiar ADMIN_PASSWORD en ese compose y recrear el
+  contenedor. Límite conocido: el proxy filtra por ruta; una acción
+  de servidor se puede invocar por su ID desde una ruta pública, así
+  que conviene reforzar con chequeo de sesión dentro de las acciones.
 
 ## Pendientes de definición
 - Repositorio remoto: https://github.com/mjsis20052/taller.git

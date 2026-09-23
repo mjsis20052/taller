@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { eliminarFotoOT, subirFotoOT } from "@/app/ots/actions";
+import { eliminarFotoOT, subirFotoOT } from "@/app/(interno)/ots/actions";
 
 export function GaleriaFotosOT({
   otId,

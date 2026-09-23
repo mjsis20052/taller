@@ -8,9 +8,8 @@ import {
   cargarPresupuesto,
   responderPresupuesto,
   saltarAEjecucion,
-} from "@/app/ots/actions";
-import { entregarSinFacturar, generarSolicitudFacturacion } from "@/app/facturacion/actions";
-import { registrarCobro } from "@/app/cobranzas/actions";
+} from "@/app/(interno)/ots/actions";
+import { entregarSinFacturar, generarSolicitudFacturacion } from "@/app/(interno)/facturacion/actions";
 
 const ETIQUETAS_ESTADO_SOLICITUD: Record<string, string> = {
   PENDIENTE: "Sin enviar todavía",
@@ -21,20 +20,16 @@ const ETIQUETAS_ESTADO_SOLICITUD: Record<string, string> = {
 
 export function PanelAccionesOT({
   otId,
-  clienteId,
   estado,
   cantidadItems,
   presupuestoPendiente,
   solicitudFacturacion,
-  saldoCliente,
 }: {
   otId: string;
-  clienteId: string;
   estado: string;
   cantidadItems: number;
   presupuestoPendiente: { id: string; total: number } | null;
   solicitudFacturacion: { id: string; estado: string } | null;
-  saldoCliente: number;
 }) {
   const [mostrarCancelar, setMostrarCancelar] = useState(false);
   const [validezDias, setValidezDias] = useState(7);
@@ -50,11 +45,8 @@ export function PanelAccionesOT({
 
   if (estado === "ENTREGADO") {
     return (
-      <div className="space-y-2.5">
-        <div className="rounded-2xl border border-borde bg-superficie p-4 text-center text-[13.5px] text-mutado">
-          OT entregada.
-        </div>
-        {saldoCliente > 0 && <FormularioCobro otId={otId} clienteId={clienteId} saldoCliente={saldoCliente} />}
+      <div className="rounded-2xl border border-borde bg-superficie p-4 text-center text-[13.5px] text-mutado">
+        OT entregada.
       </div>
     );
   }
@@ -217,14 +209,11 @@ export function PanelAccionesOT({
       )}
 
       {estado === "FACTURADO" && (
-        <div className="space-y-2.5">
-          <form action={avanzarEstadoOT.bind(null, otId, undefined)}>
-            <button type="submit" className="w-full rounded-xl bg-primario py-3.5 text-[15px] font-semibold text-white">
-              Registrar entrega
-            </button>
-          </form>
-          {saldoCliente > 0 && <FormularioCobro otId={otId} clienteId={clienteId} saldoCliente={saldoCliente} />}
-        </div>
+        <form action={avanzarEstadoOT.bind(null, otId, undefined)}>
+          <button type="submit" className="w-full rounded-xl bg-primario py-3.5 text-[15px] font-semibold text-white">
+            Registrar entrega
+          </button>
+        </form>
       )}
 
       {!mostrarCancelar ? (
@@ -261,37 +250,5 @@ export function PanelAccionesOT({
         </form>
       )}
     </div>
-  );
-}
-
-function FormularioCobro({
-  otId,
-  clienteId,
-  saldoCliente,
-}: {
-  otId: string;
-  clienteId: string;
-  saldoCliente: number;
-}) {
-  return (
-    <form action={registrarCobro.bind(null, clienteId, otId)} className="rounded-2xl border border-borde bg-superficie p-4">
-      <p className="mb-2 text-[13.5px] font-semibold text-foreground">
-        Saldo pendiente del cliente: ${saldoCliente.toLocaleString("es-AR")}
-      </p>
-      <div className="flex gap-2">
-        <input
-          name="monto"
-          type="number"
-          min={0}
-          step="0.01"
-          required
-          placeholder="Monto cobrado"
-          className="w-full rounded-lg border border-borde bg-superficie px-3 py-2.5 text-[13.5px]"
-        />
-        <button type="submit" className="shrink-0 rounded-xl bg-primario px-4 text-[13px] font-semibold text-white">
-          Cobrar
-        </button>
-      </div>
-    </form>
   );
 }

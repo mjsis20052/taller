@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { TipoPersona, CondicionFiscal } from "@/generated/prisma/enums";
-import type { ErroresFormularioCliente } from "@/app/clientes/actions";
+import type { ErroresFormularioCliente } from "@/app/(interno)/clientes/actions";
+import { CamposOpcionales } from "@/components/campos-opcionales";
 
 type ClienteExistente = {
   nombre: string;
@@ -42,6 +43,17 @@ export function FormularioCliente({
 }) {
   const [errores, ejecutarAccion, enviando] = useActionState(accion, {});
 
+  const tieneDatosOpcionales = Boolean(
+    cliente &&
+      (cliente.dni ||
+        cliente.cuit ||
+        cliente.email ||
+        cliente.domicilio ||
+        cliente.notas ||
+        cliente.tipoPersona !== TipoPersona.FISICA ||
+        cliente.condicionFiscal !== CondicionFiscal.CONSUMIDOR_FINAL),
+  );
+
   return (
     <form action={ejecutarAccion} className="space-y-5">
       <div>
@@ -61,70 +73,6 @@ export function FormularioCliente({
       </div>
 
       <div>
-        <label className={estiloLabel} htmlFor="tipoPersona">
-          Tipo de persona
-        </label>
-        <select
-          id="tipoPersona"
-          name="tipoPersona"
-          defaultValue={cliente?.tipoPersona ?? TipoPersona.FISICA}
-          className={estiloInput}
-        >
-          <option value={TipoPersona.FISICA}>Física</option>
-          <option value={TipoPersona.JURIDICA}>Jurídica</option>
-        </select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={estiloLabel} htmlFor="dni">
-            DNI
-          </label>
-          <input
-            id="dni"
-            name="dni"
-            inputMode="numeric"
-            defaultValue={cliente?.dni ?? ""}
-            className={estiloInput}
-            placeholder="30123456"
-          />
-          {errores.dni && <p className={estiloError}>{errores.dni}</p>}
-        </div>
-        <div>
-          <label className={estiloLabel} htmlFor="cuit">
-            CUIT
-          </label>
-          <input
-            id="cuit"
-            name="cuit"
-            inputMode="numeric"
-            defaultValue={cliente?.cuit ?? ""}
-            className={estiloInput}
-            placeholder="20123456786"
-          />
-          {errores.cuit && <p className={estiloError}>{errores.cuit}</p>}
-        </div>
-      </div>
-
-      <div>
-        <label className={estiloLabel} htmlFor="condicionFiscal">
-          Condición fiscal
-        </label>
-        <select
-          id="condicionFiscal"
-          name="condicionFiscal"
-          defaultValue={cliente?.condicionFiscal ?? CondicionFiscal.CONSUMIDOR_FINAL}
-          className={estiloInput}
-        >
-          {Object.entries(ETIQUETAS_CONDICION_FISCAL).map(([valor, etiqueta]) => (
-            <option key={valor} value={valor}>
-              {etiqueta}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
         <label className={estiloLabel} htmlFor="telefono">
           Teléfono (WhatsApp)
         </label>
@@ -135,51 +83,121 @@ export function FormularioCliente({
           required
           defaultValue={cliente?.telefono}
           className={estiloInput}
-          placeholder="+5491122334455"
+          placeholder="2245506078"
         />
+        <p className="mt-1 text-[12px] text-mutado">Con el código de área. El +549 se agrega solo.</p>
         {errores.telefono && <p className={estiloError}>{errores.telefono}</p>}
       </div>
 
-      <div>
-        <label className={estiloLabel} htmlFor="email">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          defaultValue={cliente?.email ?? ""}
-          className={estiloInput}
-          placeholder="opcional"
-        />
-      </div>
+      <CamposOpcionales
+        etiqueta="Tipo de persona, DNI/CUIT, email, domicilio…"
+        abiertoInicial={tieneDatosOpcionales}
+      >
+        <div>
+          <label className={estiloLabel} htmlFor="tipoPersona">
+            Tipo de persona
+          </label>
+          <select
+            id="tipoPersona"
+            name="tipoPersona"
+            defaultValue={cliente?.tipoPersona ?? TipoPersona.FISICA}
+            className={estiloInput}
+          >
+            <option value={TipoPersona.FISICA}>Física</option>
+            <option value={TipoPersona.JURIDICA}>Jurídica</option>
+          </select>
+        </div>
 
-      <div>
-        <label className={estiloLabel} htmlFor="domicilio">
-          Domicilio
-        </label>
-        <input
-          id="domicilio"
-          name="domicilio"
-          defaultValue={cliente?.domicilio ?? ""}
-          className={estiloInput}
-          placeholder="opcional"
-        />
-      </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={estiloLabel} htmlFor="dni">
+              DNI
+            </label>
+            <input
+              id="dni"
+              name="dni"
+              inputMode="numeric"
+              defaultValue={cliente?.dni ?? ""}
+              className={estiloInput}
+              placeholder="30123456"
+            />
+            {errores.dni && <p className={estiloError}>{errores.dni}</p>}
+          </div>
+          <div>
+            <label className={estiloLabel} htmlFor="cuit">
+              CUIT
+            </label>
+            <input
+              id="cuit"
+              name="cuit"
+              inputMode="numeric"
+              defaultValue={cliente?.cuit ?? ""}
+              className={estiloInput}
+              placeholder="20123456786"
+            />
+            {errores.cuit && <p className={estiloError}>{errores.cuit}</p>}
+          </div>
+        </div>
 
-      <div>
-        <label className={estiloLabel} htmlFor="notas">
-          Notas
-        </label>
-        <textarea
-          id="notas"
-          name="notas"
-          rows={3}
-          defaultValue={cliente?.notas ?? ""}
-          className={estiloInput}
-          placeholder="opcional"
-        />
-      </div>
+        <div>
+          <label className={estiloLabel} htmlFor="condicionFiscal">
+            Condición fiscal
+          </label>
+          <select
+            id="condicionFiscal"
+            name="condicionFiscal"
+            defaultValue={cliente?.condicionFiscal ?? CondicionFiscal.CONSUMIDOR_FINAL}
+            className={estiloInput}
+          >
+            {Object.entries(ETIQUETAS_CONDICION_FISCAL).map(([valor, etiqueta]) => (
+              <option key={valor} value={valor}>
+                {etiqueta}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={estiloLabel} htmlFor="email">
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            defaultValue={cliente?.email ?? ""}
+            className={estiloInput}
+            placeholder="opcional"
+          />
+        </div>
+
+        <div>
+          <label className={estiloLabel} htmlFor="domicilio">
+            Domicilio
+          </label>
+          <input
+            id="domicilio"
+            name="domicilio"
+            defaultValue={cliente?.domicilio ?? ""}
+            className={estiloInput}
+            placeholder="opcional"
+          />
+        </div>
+
+        <div>
+          <label className={estiloLabel} htmlFor="notas">
+            Notas
+          </label>
+          <textarea
+            id="notas"
+            name="notas"
+            rows={3}
+            defaultValue={cliente?.notas ?? ""}
+            className={estiloInput}
+            placeholder="opcional"
+          />
+        </div>
+      </CamposOpcionales>
 
       <button
         type="submit"

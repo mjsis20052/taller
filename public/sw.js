@@ -3,7 +3,7 @@
 // del taller (clientes, OTs, etc.) — esos siempre vienen del
 // servidor. Offline avanzado (cola de fotos, etc.): fase futura,
 // ver docs/02-arquitectura.md.
-const CACHE = "taller-shell-v1";
+const CACHE = "taller-shell-v2";
 const URL_OFFLINE = "/offline";
 
 self.addEventListener("install", (evento) => {

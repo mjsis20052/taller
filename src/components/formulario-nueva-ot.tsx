@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { SelectorClienteVehiculo } from "@/components/selector-cliente-vehiculo";
-import type { ErroresFormularioOT } from "@/app/ots/actions";
+import type { ErroresFormularioOT } from "@/app/(interno)/ots/actions";
 
 const estiloInput =
   "w-full rounded-xl border border-borde bg-superficie px-3.5 py-3 text-[15px] text-foreground outline-none focus:border-primario";
@@ -32,6 +32,9 @@ export function FormularioNuevaOT({
   motivoInicial?: string;
 }) {
   const [errores, ejecutarAccion, enviando] = useActionState(accion, {});
+  const [motivo, setMotivo] = useState(motivoInicial ?? "");
+  const [km, setKm] = useState("");
+  const [combustible, setCombustible] = useState("");
 
   return (
     <form action={ejecutarAccion} className="space-y-5">
@@ -51,7 +54,8 @@ export function FormularioNuevaOT({
           id="motivo"
           name="motivo"
           required
-          defaultValue={motivoInicial}
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
           className={estiloInput}
           placeholder="Ruido en la suspensión delantera"
         />
@@ -68,6 +72,8 @@ export function FormularioNuevaOT({
           type="number"
           min={0}
           required
+          value={km}
+          onChange={(e) => setKm(e.target.value)}
           inputMode="numeric"
           className={estiloInput}
           placeholder="85000"
@@ -79,7 +85,13 @@ export function FormularioNuevaOT({
         <label className={estiloLabel} htmlFor="nivelCombustible">
           Nivel de combustible
         </label>
-        <select id="nivelCombustible" name="nivelCombustible" defaultValue="" className={estiloInput}>
+        <select
+          id="nivelCombustible"
+          name="nivelCombustible"
+          value={combustible}
+          onChange={(e) => setCombustible(e.target.value)}
+          className={estiloInput}
+        >
           <option value="">Sin especificar</option>
           {NIVELES_COMBUSTIBLE.map((n) => (
             <option key={n.valor} value={n.valor}>
