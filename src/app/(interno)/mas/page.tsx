@@ -80,8 +80,14 @@ const IconoSalir: Icono = (p) => (
     <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l4 4-4 4M19 12H9" />
   </svg>
 );
+const IconoMicrofono: Icono = (p) => (
+  <svg viewBox="0 0 24 24" {...base} {...p}>
+    <rect x="9" y="2.5" width="6" height="11" rx="3" />
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v3.5M8.5 21.5h7" />
+  </svg>
+);
 
-const APPS: { href: string; etiqueta: string; Icono: Icono; color: string }[] = [
+const APPS: { href: string; etiqueta: string; Icono: Icono; color: string; externo?: boolean }[] = [
   { href: "/informes", etiqueta: "Informes", Icono: IconoInformes, color: "from-pink-500 to-rose-600" },
   { href: "/caja", etiqueta: "Caja", Icono: IconoCaja, color: "from-lime-500 to-green-600" },
   { href: "/clientes", etiqueta: "Clientes", Icono: IconoClientes, color: "from-indigo-500 to-violet-500" },
@@ -92,6 +98,15 @@ const APPS: { href: string; etiqueta: string; Icono: Icono; color: string }[] = 
   { href: "/facturacion", etiqueta: "Facturación", Icono: IconoFacturacion, color: "from-cyan-400 to-sky-600" },
   { href: "/reportes", etiqueta: "Reportes", Icono: IconoReportes, color: "from-fuchsia-500 to-purple-600" },
   { href: "/configuracion", etiqueta: "Horarios", Icono: IconoHorarios, color: "from-slate-500 to-slate-700" },
+  // Módulo aparte (carga de OT por voz), todavía en construcción: ver
+  // taller-carga-voz/README.md. URL configurable por si cambia el subdominio.
+  {
+    href: process.env.CARGA_VOZ_URL ?? "https://voz.compromisodiario.com.ar",
+    etiqueta: "Carga por voz",
+    Icono: IconoMicrofono,
+    color: "from-violet-500 to-fuchsia-600",
+    externo: true,
+  },
 ];
 
 const clasesIcono =
@@ -103,14 +118,29 @@ export default function PaginaMas() {
       <EncabezadoPagina titulo="Más" descripcion="Todo lo demás del taller, a un toque." />
 
       <div className="grid grid-cols-3 gap-x-3 gap-y-6 pt-2 lg:grid-cols-4">
-        {APPS.map(({ href, etiqueta, Icono, color }) => (
-          <Link key={href} href={href} className="group flex flex-col items-center gap-2 text-center">
-            <span className={`${clasesIcono} ${color}`}>
-              <Icono className="h-8 w-8" />
-            </span>
-            <span className="text-[13px] font-semibold leading-tight text-foreground">{etiqueta}</span>
-          </Link>
-        ))}
+        {APPS.map(({ href, etiqueta, Icono, color, externo }) =>
+          externo ? (
+            <a
+              key={href}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col items-center gap-2 text-center"
+            >
+              <span className={`${clasesIcono} ${color}`}>
+                <Icono className="h-8 w-8" />
+              </span>
+              <span className="text-[13px] font-semibold leading-tight text-foreground">{etiqueta}</span>
+            </a>
+          ) : (
+            <Link key={href} href={href} className="group flex flex-col items-center gap-2 text-center">
+              <span className={`${clasesIcono} ${color}`}>
+                <Icono className="h-8 w-8" />
+              </span>
+              <span className="text-[13px] font-semibold leading-tight text-foreground">{etiqueta}</span>
+            </Link>
+          ),
+        )}
 
         <form action={cerrarSesion} className="contents">
           <button type="submit" className="group flex flex-col items-center gap-2 text-center">

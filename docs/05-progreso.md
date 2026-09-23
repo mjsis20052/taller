@@ -574,6 +574,16 @@
   OT, sus repuestos por pedir/pedidos y hace cuantos dias. Una OT sale de
   "Activas" al entregarse (se mantuvo asi a pedido del usuario).
 
+- (2026-09-23) Botón "Carga por voz" en Más: enlace externo (target=_blank)
+  al modulo aparte taller-carga-voz (repo separado, ver su propio README).
+  URL configurable con la env var CARGA_VOZ_URL; por defecto
+  https://voz.compromisodiario.com.ar (subdominio sugerido, todavia sin
+  desplegar: el usuario va a crear el registro A apuntando a 149.50.138.149,
+  el mismo VPS donde ya corre taller-app, asi el nuevo servicio se agrega
+  a la misma red de Docker sin levantar un servidor nuevo). Hasta que se
+  despliegue y se configure nginx para ese subdominio, el boton no va a
+  responder.
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,
