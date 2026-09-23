@@ -193,23 +193,27 @@ model Turno {
 }
 
 model OrdenTrabajo {
-  id                String            @id @default(cuid())
-  numero            String            @unique
-  clienteId         String
-  vehiculoId        String
-  estado            EstadoOT          @default(TURNO_AGENDADO)
-  motivo            String?
-  kmIngreso         Int?
-  nivelCombustible  NivelCombustible?
-  motivoCancelacion String?
-  totalRepuestos    Decimal           @default(0) @db.Decimal(12, 2)
-  totalManoObra     Decimal           @default(0) @db.Decimal(12, 2)
-  total             Decimal           @default(0) @db.Decimal(12, 2)
-  cerradaAt         DateTime?
+  id                  String            @id @default(cuid())
+  numero              String            @unique
+  clienteId           String
+  vehiculoId          String
+  estado              EstadoOT          @default(TURNO_AGENDADO)
+  motivo              String?
+  kmIngreso           Int?
+  nivelCombustible    NivelCombustible?
+  motivoCancelacion   String?
+  // Id del borrador que la creó desde el módulo de carga por voz (taller-carga-voz).
+  // Único: si llega dos veces el mismo borrador (reintento de red, doble tap), se
+  // devuelve esta OT en vez de crear otra. Null en las OT creadas normalmente.
+  origenBorradorVozId String?           @unique
+  totalRepuestos      Decimal           @default(0) @db.Decimal(12, 2)
+  totalManoObra       Decimal           @default(0) @db.Decimal(12, 2)
+  total               Decimal           @default(0) @db.Decimal(12, 2)
+  cerradaAt           DateTime?
   // Enlace secreto para compartir el informe de esta OT con el cliente (/informe/<token>).
-  tokenInforme      String            @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  tokenInforme        String            @unique @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
   cliente              Cliente               @relation(fields: [clienteId], references: [id])
   vehiculo             Vehiculo              @relation(fields: [vehiculoId], references: [id])

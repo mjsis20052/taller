@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { recalcularTotalesOT, siguienteNumeroOT } from "@/lib/ordenes-trabajo";
+import { crearOTDesdeDatos, recalcularTotalesOT, siguienteNumeroOT } from "@/lib/ordenes-trabajo";
 import { normalizarPatente } from "@/lib/validaciones/patente";
 import { normalizarTelefono } from "@/lib/validaciones/telefono";
 import { ESTADOS_PEDIDO, type EstadoPedido } from "@/lib/pedidos";
@@ -12,7 +12,6 @@ import {
   EntidadFoto,
   EstadoOT,
   EstadoPresupuesto,
-  EstadoTurno,
   TipoOTItem,
   type NivelCombustible,
 } from "@/generated/prisma/enums";
@@ -73,58 +72,15 @@ export async function crearOT(
   }
   if (Object.keys(errores).length > 0) return errores;
 
-  const otId = await prisma.$transaction(async (tx) => {
-    if (!clienteId) {
-      const existente = await tx.cliente.findFirst({ where: { telefono: telefonoNuevo } });
-      const cliente =
-        existente ??
-        (await tx.cliente.create({
-          data: {
-            nombre: nombreNuevo,
-            telefono: telefonoNuevo,
-            tipoPersona: "FISICA",
-            condicionFiscal: "CONSUMIDOR_FINAL",
-          },
-        }));
-      clienteId = cliente.id;
-    }
-    if (!vehiculoId) {
-      const vehiculo = await tx.vehiculo.create({
-        data: { clienteId, patente: patenteNueva, marca: marcaNueva, modelo: modeloNuevo },
-      });
-      vehiculoId = vehiculo.id;
-    }
-
-    const numero = await siguienteNumeroOT(tx);
-
-    const ot = await tx.ordenTrabajo.create({
-      data: {
-        numero,
-        clienteId,
-        vehiculoId,
-        estado: EstadoOT.INGRESADO,
-        motivo,
-        kmIngreso,
-        nivelCombustible: nivelCombustible ?? undefined,
-      },
-    });
-
-    await tx.timelineEvento.create({
-      data: { otId: ot.id, estado: EstadoOT.INGRESADO, nota: "Recepción del vehículo" },
-    });
-
-    await tx.kilometrajeRegistro.create({
-      data: { vehiculoId, km: kmIngreso, otId: ot.id },
-    });
-
-    if (turnoIdOpcional) {
-      await tx.turno.update({
-        where: { id: turnoIdOpcional },
-        data: { estado: EstadoTurno.CONVERTIDO_OT, otId: ot.id },
-      });
-    }
-
-    return ot.id;
+  const { otId } = await crearOTDesdeDatos({
+    clienteId: clienteId || null,
+    clienteNuevo: clienteId ? null : { nombre: nombreNuevo, telefono: telefonoNuevo },
+    vehiculoId: vehiculoId || null,
+    vehiculoNuevo: vehiculoId ? null : { patente: patenteNueva, marca: marcaNueva, modelo: modeloNuevo },
+    motivo,
+    kmIngreso,
+    nivelCombustible,
+    turnoIdOpcional,
   });
 
   revalidatePath("/ots");
