@@ -2,7 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_SESION, authConfigurada, tokenValido } from "@/lib/sesion";
 
 // Públicas: el portal de clientes y lo mínimo que necesita para cargar/instalarse.
-const PUBLICAS = /^\/(portal|login|_next|icons|splash|sw\.js|manifest\.webmanifest|favicon\.ico|offline|api\/version|informe)(\/|$|\.)/;
+// api/voz/* no usa la cookie de sesión: se autentica solo con el header
+// X-Voz-Key (ver src/lib/voz-auth.ts) porque lo llama otro servicio, no un
+// navegador con un usuario logueado.
+const PUBLICAS = /^\/(portal|login|_next|icons|splash|sw\.js|manifest\.webmanifest|favicon\.ico|offline|api\/version|api\/voz|informe)(\/|$|\.)/;
 
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
