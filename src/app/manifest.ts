@@ -21,13 +21,13 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["business", "productivity"],
     icons: [
       ...TAMANOS_ANY.map((tamano) => ({
-        src: `/icons/icon-${tamano}.png?v=4`,
+        src: `/icons/icon-${tamano}.png?v=5`,
         sizes: `${tamano}x${tamano}`,
         type: "image/png" as const,
         purpose: "any" as const,
       })),
       {
-        src: "/icons/icon-512-maskable.png?v=4",
+        src: "/icons/icon-512-maskable.png?v=5",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

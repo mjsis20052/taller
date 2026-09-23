@@ -584,6 +584,28 @@
   despliegue y se configure nginx para ese subdominio, el boton no va a
   responder.
 
+- (2026-09-23) Modulo de carga por voz (repo aparte taller-carga-voz,
+  privado en GitHub): Etapa 2 lista en LOCAL. Se agrego:
+  - Columna OrdenTrabajo.origenBorradorVozId (nullable, unica) - migracion
+    20260923133716_voz_origen_borrador. FALTA aplicarla en el VPS.
+  - src/lib/ordenes-trabajo.ts: crearOTDesdeDatos, extraida de crearOT
+    (el formulario de recepcion sigue igual, ya verificado).
+  - src/app/api/voz/{vehiculos/buscar,ordenes}/route.ts: autenticados con
+    header X-Voz-Key contra la env var VOZ_API_KEY (nueva, server-only,
+    NO esta en el .env de produccion todavia). En local: taller/.env y
+    taller-carga-voz/.env tienen la MISMA clave (se genero con
+    secrets.token_hex(24); no esta commiteada en ningun lado).
+  - src/proxy.ts deja pasar api/voz/* sin pedir la cookie de sesion.
+  - Probado de punta a punta (texto -> POST /api/voz/ordenes -> OT visible
+    en localhost:3001), con idempotencia por borradorId. Datos de prueba
+    borrados despues.
+- (2026-09-23) Splash con loader animado (3 puntitos CSS) e iconos
+  regenerados sin el borde/marco redondeado que dibujabamos nosotros
+  (competia con el redondeo que aplica el propio SO). Iconos ?v=5.
+- (2026-09-23) Boton "Carga por voz" en Mas: ahora depende de la env var
+  CARGA_VOZ_URL (antes tenia un default hardcodeado y se mostraba
+  siempre). Sin esa env var, el boton no aparece.
+
 ## Despliegue en el VPS (2026-09-18) — LEER ANTES DE TOCARLO
 - Servidor: 149.50.138.149 (DattaWeb, Ubuntu 22.04, SOLO 1.9 GB de RAM,
   sin swap), compartido con el diario (compromiso-main, pm2, mongo,
