@@ -98,15 +98,19 @@ const APPS: { href: string; etiqueta: string; Icono: Icono; color: string; exter
   { href: "/facturacion", etiqueta: "Facturación", Icono: IconoFacturacion, color: "from-cyan-400 to-sky-600" },
   { href: "/reportes", etiqueta: "Reportes", Icono: IconoReportes, color: "from-fuchsia-500 to-purple-600" },
   { href: "/configuracion", etiqueta: "Horarios", Icono: IconoHorarios, color: "from-slate-500 to-slate-700" },
-  // Módulo aparte (carga de OT por voz), todavía en construcción: ver
-  // taller-carga-voz/README.md. URL configurable por si cambia el subdominio.
-  {
-    href: process.env.CARGA_VOZ_URL ?? "https://voz.compromisodiario.com.ar",
-    etiqueta: "Carga por voz",
-    Icono: IconoMicrofono,
-    color: "from-violet-500 to-fuchsia-600",
-    externo: true,
-  },
+  // Módulo aparte (carga de OT por voz, repo taller-carga-voz). Sin
+  // CARGA_VOZ_URL configurada (todavía no desplegado) el botón ni aparece.
+  ...(process.env.CARGA_VOZ_URL
+    ? [
+        {
+          href: process.env.CARGA_VOZ_URL,
+          etiqueta: "Carga por voz",
+          Icono: IconoMicrofono,
+          color: "from-violet-500 to-fuchsia-600",
+          externo: true,
+        },
+      ]
+    : []),
 ];
 
 const clasesIcono =
