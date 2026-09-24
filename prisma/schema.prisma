@@ -239,6 +239,26 @@ model TimelineEvento {
   estado EstadoOT
   nota   String?
   fecha  DateTime @default(now())
+  // Quién generó el evento. Null en los eventos que ya existían y en los que
+  // siguen saliendo del panel (ahí el usuario es implícito, la sesión del
+  // local). Los endpoints de voz (api/voz/**) SIEMPRE lo completan, con el
+  // valor del header X-Voz-Usuario, para auditoría.
+  usuario String?
+  // De dónde vino el evento: null = panel (comportamiento de siempre). "VOZ"
+  // = creado por el asistente conversacional. No hay "estado" ni modelo
+  // separado para una nota sin cambio de estado real: el modelo no lo
+  // soporta (estado es NOT NULL) y agregarlo hoy rompería el resto del
+  // panel que asume timeline == historial de estados. Para
+  // POST /api/voz/ordenes/:id/notas (nota sin cambiar de estado) se
+  // resuelve reusando el estado ACTUAL de la OT en el evento (no es un
+  // cambio real, solo queda registrado con ese estado, igual que
+  // publicarNovedadOT ya hace hoy en el panel) + origen="VOZ" para
+  // distinguirlo de un cambio de estado real. La nota en sí queda prefijada
+  // "[voz — <usuario>] " (ver src/lib/voz-timeline.ts) para que se vea el
+  // origen en el panel sin tener que tocar su código de renderizado (fuera
+  // del alcance de este agente: solo toca src/app/api/voz/**, src/lib/** y
+  // prisma/migrations/**).
+  origen String?
 
   ot OrdenTrabajo @relation(fields: [otId], references: [id])
 
@@ -400,4 +420,21 @@ model SolicitudFacturacion {
   createdAt         DateTime                   @default(now())
 
   ot OrdenTrabajo @relation(fields: [otId], references: [id])
+}
+
+// Idempotencia de los endpoints de escritura de voz (api/voz/**). Mismo
+// concepto que OrdenTrabajo.origenBorradorVozId, generalizado a cualquier
+// endpoint: se guarda la respuesta ya calculada bajo (endpoint,
+// idempotencyKey); si el asistente reintenta con la misma key (red, doble
+// confirmación) se devuelve la misma respuesta sin repetir el efecto. No
+// tiene relación a OrdenTrabajo porque algunas respuestas guardadas son de
+// error (p.ej. 404 "no existe esa OT") y no siempre hay una fila real detrás.
+model VozIdempotencia {
+  id             String   @id @default(cuid())
+  endpoint       String
+  idempotencyKey String
+  respuesta      Json
+  createdAt      DateTime @default(now())
+
+  @@unique([endpoint, idempotencyKey])
 }

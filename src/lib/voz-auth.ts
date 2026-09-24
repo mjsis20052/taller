@@ -12,3 +12,13 @@ export function vozAutorizado(request: Request): boolean {
   if (!recibida) return false;
   return iguales(recibida, clave);
 }
+
+// Usuario logueado en taller-carga-voz que hizo la acción (para auditoría en
+// el timeline, ver TimelineEvento.usuario en schema.prisma). Todos los
+// endpoints nuevos de voz lo exigen: sin este header, 400.
+const ENCABEZADO_USUARIO = "x-voz-usuario";
+
+export function vozUsuario(request: Request): string | null {
+  const usuario = request.headers.get(ENCABEZADO_USUARIO)?.trim();
+  return usuario || null;
+}
