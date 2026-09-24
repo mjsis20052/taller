@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
-import { EstadoOT, EstadoTurno, type NivelCombustible } from "@/generated/prisma/enums";
+import { EstadoOT, EstadoTurno, TipoOTItem, type NivelCombustible } from "@/generated/prisma/enums";
 
 export async function siguienteNumeroOT(
   tx: Prisma.TransactionClient = prisma,
@@ -128,5 +128,60 @@ export async function recalcularTotalesOT(otId: string, tx: Prisma.TransactionCl
       totalManoObra,
       total: totalRepuestos + totalManoObra,
     },
+  });
+}
+
+export type DatosOTItem = {
+  tipo: TipoOTItem;
+  descripcion: string;
+  cantidad: number;
+  precioUnitario: number;
+  falla?: string | null;
+  // Repuestos del inventario: descuenta stock. No aplica a mano de obra ni a
+  // repuestos libres/nuevos (sin id de stock).
+  repuestoId?: string | null;
+  aPedir?: boolean;
+  notaPedido?: string | null;
+};
+
+// Crea un ítem de OT (trabajo o repuesto) y recalcula los totales, en una
+// transacción; si el repuesto viene del inventario, descuenta stock y deja
+// el movimiento. Lo usan tanto las Server Actions del panel
+// (ots/actions.ts: agregarTrabajoOT, agregarRepuestoOT, con FormData y
+// validación propia) como el endpoint de voz (api/voz/ordenes/:id/items) —
+// para no duplicar esta lógica en los dos lugares, mismo patrón que
+// crearOTDesdeDatos. Quien llama valida antes: acá se asume que descripcion,
+// cantidad y precioUnitario ya son válidos.
+export async function crearOTItem(otId: string, datos: DatosOTItem) {
+  return prisma.$transaction(async (tx) => {
+    const item = await tx.oTItem.create({
+      data: {
+        otId,
+        tipo: datos.tipo,
+        descripcion: datos.descripcion,
+        falla: datos.falla ?? null,
+        cantidad: datos.cantidad,
+        precioUnitario: datos.precioUnitario,
+        repuestoId: datos.repuestoId ?? null,
+        aPedir: Boolean(datos.aPedir),
+        estadoPedido: datos.aPedir ? "A_PEDIR" : "NO",
+        notaPedido: datos.aPedir || datos.notaPedido ? (datos.notaPedido ?? null) : null,
+      },
+    });
+
+    await recalcularTotalesOT(otId, tx);
+
+    if (datos.repuestoId) {
+      const cantidadStock = Math.round(datos.cantidad);
+      await tx.movimientoStock.create({
+        data: { repuestoId: datos.repuestoId, tipo: "SALIDA", cantidad: cantidadStock, otId },
+      });
+      await tx.repuesto.update({
+        where: { id: datos.repuestoId },
+        data: { stock: { decrement: cantidadStock } },
+      });
+    }
+
+    return item;
   });
 }

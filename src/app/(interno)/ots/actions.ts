@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { crearOTDesdeDatos, recalcularTotalesOT, siguienteNumeroOT } from "@/lib/ordenes-trabajo";
+import { crearOTDesdeDatos, crearOTItem, recalcularTotalesOT, siguienteNumeroOT } from "@/lib/ordenes-trabajo";
 import { normalizarPatente } from "@/lib/validaciones/patente";
 import { normalizarTelefono } from "@/lib/validaciones/telefono";
 import { ESTADOS_PEDIDO, type EstadoPedido } from "@/lib/pedidos";
@@ -164,18 +164,12 @@ export async function agregarTrabajoOT(otId: string, formData: FormData) {
 
   if (!solucion || Number.isNaN(precio) || precio < 0) return;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.oTItem.create({
-      data: {
-        otId,
-        tipo: TipoOTItem.MANO_OBRA,
-        descripcion: solucion,
-        falla,
-        cantidad: 1,
-        precioUnitario: precio,
-      },
-    });
-    await recalcularTotalesOT(otId, tx);
+  await crearOTItem(otId, {
+    tipo: TipoOTItem.MANO_OBRA,
+    descripcion: solucion,
+    falla,
+    cantidad: 1,
+    precioUnitario: precio,
   });
 
   revalidatePath(`/ots/${otId}`);
@@ -193,31 +187,14 @@ export async function agregarRepuestoOT(otId: string, formData: FormData) {
 
   if (!descripcion || !cantidad || cantidad <= 0 || Number.isNaN(precioUnitario) || precioUnitario < 0) return;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.oTItem.create({
-      data: {
-        otId,
-        tipo: TipoOTItem.REPUESTO,
-        descripcion,
-        cantidad,
-        precioUnitario,
-        repuestoId,
-        aPedir,
-        estadoPedido: aPedir ? "A_PEDIR" : "NO",
-        notaPedido: aPedir || notaPedido ? notaPedido : null,
-      },
-    });
-    await recalcularTotalesOT(otId, tx);
-
-    if (repuestoId) {
-      await tx.movimientoStock.create({
-        data: { repuestoId, tipo: "SALIDA", cantidad: Math.round(cantidad), otId },
-      });
-      await tx.repuesto.update({
-        where: { id: repuestoId },
-        data: { stock: { decrement: Math.round(cantidad) } },
-      });
-    }
+  await crearOTItem(otId, {
+    tipo: TipoOTItem.REPUESTO,
+    descripcion,
+    cantidad,
+    precioUnitario,
+    repuestoId,
+    aPedir,
+    notaPedido,
   });
 
   revalidatePath(`/ots/${otId}`);
