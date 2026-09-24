@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { vozAutorizado } from "@/lib/voz-auth";
+import { vozAutorizado, vozUsuario } from "@/lib/voz-auth";
 import { crearOTDesdeDatos, recalcularTotalesOT } from "@/lib/ordenes-trabajo";
 import { normalizarPatente } from "@/lib/validaciones/patente";
 import { normalizarTelefono } from "@/lib/validaciones/telefono";
@@ -35,6 +35,50 @@ type CuerpoOrden = {
 
 function respuestaOT(ot: { id: string; numero: string }, creada: boolean) {
   return NextResponse.json({ otId: ot.id, numero: ot.numero, url: `/ots/${ot.id}`, creada });
+}
+
+// Lista de OTs "en reparación" para la pantalla del asistente de voz
+// (botón "Vehículos en reparación") — no confundir con GET /ordenes/:id,
+// que trae el detalle de UNA. "Abierta" = no ENTREGADO ni CANCELADA, mismo
+// criterio que ya usa GET /vehiculos/:id para "otsAbiertas".
+export async function GET(request: Request) {
+  if (!vozAutorizado(request)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+  if (!vozUsuario(request)) {
+    return NextResponse.json({ error: "Falta el header X-Voz-Usuario." }, { status: 400 });
+  }
+
+  const ordenes = await prisma.ordenTrabajo.findMany({
+    where: { estado: { notIn: [EstadoOT.ENTREGADO, EstadoOT.CANCELADA] } },
+    orderBy: { updatedAt: "desc" },
+    take: 100,
+    select: {
+      id: true,
+      numero: true,
+      estado: true,
+      motivo: true,
+      updatedAt: true,
+      vehiculo: { select: { id: true, patente: true, marca: true, modelo: true } },
+      cliente: { select: { id: true, nombre: true } },
+    },
+  });
+
+  return NextResponse.json({
+    ordenes: ordenes.map((ot) => ({
+      otId: ot.id,
+      numero: ot.numero,
+      estado: ot.estado,
+      motivo: ot.motivo,
+      updatedAt: ot.updatedAt,
+      vehiculoId: ot.vehiculo.id,
+      patente: ot.vehiculo.patente,
+      marca: ot.vehiculo.marca,
+      modelo: ot.vehiculo.modelo,
+      clienteId: ot.cliente.id,
+      clienteNombre: ot.cliente.nombre,
+    })),
+  });
 }
 
 // Crea la OT que armó el módulo de carga por voz (o, si `borradorId` ya se

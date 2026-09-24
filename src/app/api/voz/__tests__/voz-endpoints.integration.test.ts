@@ -11,6 +11,7 @@ vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
 import { GET as GET_vehiculo } from "@/app/api/voz/vehiculos/[id]/route";
 import { GET as GET_ot } from "@/app/api/voz/ordenes/[id]/route";
+import { GET as GET_ordenes_lista } from "@/app/api/voz/ordenes/route";
 import { POST as POST_items } from "@/app/api/voz/ordenes/[id]/items/route";
 import { POST as POST_estado } from "@/app/api/voz/ordenes/[id]/estado/route";
 import { POST as POST_diagnostico } from "@/app/api/voz/ordenes/[id]/diagnostico/route";
@@ -136,6 +137,25 @@ describe("endpoints /api/voz/*", () => {
       expect(body.ot.updatedAt).toBeTruthy();
       expect(Array.isArray(body.items)).toBe(true);
       expect(Array.isArray(body.timeline)).toBe(true);
+    });
+  });
+
+  describe("GET /api/voz/ordenes (lista, para \"Vehículos en reparación\")", () => {
+    it("incluye la OT de prueba (abierta) con patente y cliente", async () => {
+      const res = await GET_ordenes_lista(req("http://x/api/voz/ordenes"));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(Array.isArray(body.ordenes)).toBe(true);
+      expect(body.ordenes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ otId, estado: "INGRESADO", clienteId, vehiculoId }),
+        ]),
+      );
+    });
+
+    it("sin X-Voz-Usuario -> 400", async () => {
+      const res = await GET_ordenes_lista(req("http://x/api/voz/ordenes", { sinUsuario: true }));
+      expect(res.status).toBe(400);
     });
   });
 
